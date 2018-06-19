@@ -4,7 +4,9 @@ import requests
 import math
 import random
 import pprint
-import datetime
+from datetime import datetime as dt
+import time
+import iso8601 #DEPENDENCY
 
 lat_selected = ""
 lon_selected = ""
@@ -41,21 +43,36 @@ def getAstroTwilight(lat_selected, lon_selected):
 
     print sunset_data
 
-    astro_twilight = sunset_data['results']['nautical_twilight_end'] #format:2015-05-21T20:28:21+00:00
+    #Nautical Twilight End = Start of Astronomical Twilight and vice-versa
+    astro_twilight_end = sunset_data['results']['nautical_twilight_begin'] #format:2015-05-21T20:28:21+00:00
+    astro_twilight_start = sunset_data['results']['nautical_twilight_end']
 
-    print "astro_twilight", astro_twilight
-    return astro_twilight
+    print "astro_twilight", astro_twilight_start, astro_twilight_end
+    return (astro_twilight_start, astro_twilight_end)
 
 def isDark(lat_selected, lon_selected):
-    curr_time = datetime.datetime.utcnow()#.isoformat()
-    astro_start = getAstroTwilight(lat_selected, lon_selected)
-    print "curr_time  ", curr_time
-    print "astro_start", astro_start
+    curr_time = dt.utcnow()#.isoformat()
+    curr_time_unix = time.mktime(curr_time.timetuple())
+
+    astro_start_time, astro_end_time = getAstroTwilight(lat_selected, lon_selected)
+    print "astro_twilight", astro_start_time, astro_end_time
+    astro_start_time = iso8601.parse_date(astro_start_time)
+    astro_end_time = iso8601.parse_date(astro_end_time)
+
+    astro_start_time_unix = time.mktime(astro_start_time.timetuple())
+    astro_end_time_unix = time.mktime(astro_end_time.timetuple())
+    print "astro_start", astro_start_time_unix
+    print "curr_time  ", curr_time_unix
+    print "astro_end  ", astro_end_time_unix
     # WATCH FOR TIME ZONES, DST ERRORS!
     # return max(curr_time, astro_start)
 
-    # If using checkIsDark() name
-    if curr_time >= astro_start:
+    # Check if time is during the day or not
+    # AstroEnd = start of (almost) sunrise
+    # AstroStart = end of (almost) sunset
+    # THEREFORE: Inbetween values is Day, Outside is Night!
+
+    if curr_time_unix >= astro_start_time_unix and curr_time_unix <= astro_end_time_unix:
         print "NIGHT"
         return True
     else:
