@@ -5,8 +5,8 @@ import math
 import random
 import pprint
 from datetime import datetime as dt
-import time
-import iso8601 #DEPENDENCY
+import time as t
+import iso8601 #DEPENDENCY pip install it
 
 lat_selected = ""
 lon_selected = ""
@@ -34,45 +34,86 @@ lon_selected = ""
 
 # STAGE 2: allow user to specify time?
 
-def getAstroTwilight(lat_selected, lon_selected):
+def testDSAPI(weatherdata):
+    print "*********************************"
+    if 'error' in weatherdata.keys():
+        print "DARKSKY API RESPONSE ERROR\nHTTP", weatherdata['code'], "-", weatherdata['error']
+    else:
+        print "DARKSKY API RESPONSE SUCESS"
+    print "*********************************"
+
+def getCurrentUnixTime():
+    return str(t.mktime(dt.utcnow().timetuple()))[:-2]
+
+
+
+def getFormattedDarknessTimes(lat_selected, lon_selected):
+    sunset_url = "https://api.sunrise-sunset.org/json?lat=3"+lat_selected+"&lng="+lon_selected
+    # print "ssurl", sunset_url
+    request = requests.get(sunset_url)
+    sunset_data = request.json()
+    sunrisetime = sunset_data['results']['sunrise']#['nautical_twilight_begin'] #format:2015-05-21T20:28:21+00:00
+    sunsettime = sunset_data['results']['sunset']#['nautical_twilight_end']
+
+    print "sunrise", sunrisetime
+    print "sunset ", sunsettime
+
+
+def getDarknessTimes(lat_selected, lon_selected):
+
+    getFormattedDarknessTimes(lat_selected,lon_selected)
+
     sunset_url = "https://api.sunrise-sunset.org/json?lat=3"+lat_selected+"&lng="+lon_selected+"&formatted=0"
-    print "ssurl", sunset_url
+    # print "ssurl", sunset_url
     request = requests.get(sunset_url)
     sunset_data = request.json()
     #start of astronomical twilight. Good enough to begin stargazing
 
-    print sunset_data
+    # print sunset_data
 
     #Nautical Twilight End = Start of Astronomical Twilight and vice-versa
-    astro_twilight_end = sunset_data['results']['nautical_twilight_begin'] #format:2015-05-21T20:28:21+00:00
-    astro_twilight_start = sunset_data['results']['nautical_twilight_end']
+    morning_stagazing_ends = sunset_data['results']['sunrise']#['nautical_twilight_begin'] #format:2015-05-21T20:28:21+00:00
+    night_stagazing_begins = sunset_data['results']['sunset']#['nautical_twilight_end']
 
-    print "astro_twilight", astro_twilight_start, astro_twilight_end
-    return (astro_twilight_start, astro_twilight_end)
+    print "sunrise", morning_stagazing_ends[:-6]
+    print "sunset ", night_stagazing_begins[:-6]
+
+    morning_stagazing_ends = dt.strptime(morning_stagazing_ends[:-6], '%Y-%m-%dT%H:%M:%S')
+    night_stagazing_begins = dt.strptime(night_stagazing_begins[:-6], '%Y-%m-%dT%H:%M:%S')
+
+    morning_stagazing_ends_unix = str((morning_stagazing_ends - dt(1970, 1, 1)).total_seconds())[:-2]
+    night_stagazing_begins_unix = str((night_stagazing_begins - dt(1970, 1, 1)).total_seconds())[:-2]
+
+    return (morning_stagazing_ends_unix, night_stagazing_begins_unix)
+
+def ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_stagazing_begins_unix):
+
+    times = {
+    "prev sunset    ": int(night_stagazing_begins_unix) - 86400,
+    "sunrise        ": int(morning_stagazing_ends_unix),
+    "***curr_time***": int(curr_time_unix),
+    "sunset         ": int(night_stagazing_begins_unix),
+    "next sunrise   ": int(morning_stagazing_ends_unix) + 86400,
+    }
+
+    for key, value in sorted(times.iteritems(), key=lambda (k,v): (v,k)):
+        print "%s: %s" % (key, value)
+
+
 
 def isDark(lat_selected, lon_selected):
-    curr_time = dt.utcnow()#.isoformat()
-    curr_time_unix = time.mktime(curr_time.timetuple())
-
-    astro_start_time, astro_end_time = getAstroTwilight(lat_selected, lon_selected)
-    print "astro_twilight", astro_start_time, astro_end_time
-    astro_start_time = iso8601.parse_date(astro_start_time)
-    astro_end_time = iso8601.parse_date(astro_end_time)
-
-    astro_start_time_unix = time.mktime(astro_start_time.timetuple())
-    astro_end_time_unix = time.mktime(astro_end_time.timetuple())
-    print "astro_start", astro_start_time_unix
-    print "curr_time  ", curr_time_unix
-    print "astro_end  ", astro_end_time_unix
+    curr_time_unix = getCurrentUnixTime()
+    morning_stagazing_ends_unix, night_stagazing_begins_unix = getDarknessTimes(lat_selected, lon_selected)
     # WATCH FOR TIME ZONES, DST ERRORS!
-    # return max(curr_time, astro_start)
+
+    #uugggghhh this is temporary okay
+    ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_stagazing_begins_unix)
 
     # Check if time is during the day or not
     # AstroEnd = start of (almost) sunrise
     # AstroStart = end of (almost) sunset
     # THEREFORE: Inbetween values is Day, Outside is Night!
-
-    if curr_time_unix >= astro_start_time_unix and curr_time_unix <= astro_end_time_unix:
+    if curr_time_unix <= morning_stagazing_ends_unix or curr_time_unix >= night_stagazing_begins_unix:
         print "NIGHT"
         return True
     else:
@@ -88,17 +129,18 @@ def getLightPollution():
     return getLightPollutionTEST()
 
 def getWeather(lat_selected, lon_selected, time):
-    darksky_url = "https://api.darksky.net/forecast/efc5a8359eb2564994acd4ec24971d4c/"+lat_selected+","+lon_selected+time
+    darksky_url = "https://api.darksky.net/forecast/efc5a8359eb2564994acd4ec24971d4c/"+lat_selected+","+lon_selected+","+time
     print darksky_url
     request = requests.get(darksky_url)
     return request.json()
 
-def getWeatherToday(lat_selected, lon_selected, time=""):
-    if time:
-        print "ADJUSTING TIME"
-        time = ",time="+time
+def getWeatherToday(lat_selected, lon_selected, time):
+    #time = ",time="+str(time) #CHECK which var to actually take
+
     weatherdata = getWeather(lat_selected, lon_selected, time)
-    print weatherdata
+
+    testDSAPI(weatherdata)
+
     precipProbability = weatherdata['currently']['precipProbability']
     humidity = weatherdata['currently']['humidity']
     visibility = weatherdata['currently']['visibility']
@@ -123,8 +165,11 @@ def getLocationData(lat_selected, lon_selected):
     maps_api_key = "AIzaSyAPV8hWJYamUd7TCnC6h6YcljuXnFW1lp8"
 
     #un-hardcode origin location
-    dist_url = "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins=San+Francisco,CA&destinations="+lat_selected+","+lon_selected+",NY&key="+maps_api_key
+    dist_url = "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins=San+Francisco,CA&destinations="+lat_selected+","+lon_selected+"&key="+maps_api_key
     elevation_url = "https://maps.googleapis.com/maps/api/elevation/json?locations="+lat_selected+","+lon_selected+"&key="+maps_api_key
+
+    print "dist_url     ", dist_url
+    print "elevation_url", elevation_url
 
     dist_request = requests.get(dist_url)
     elev_request = requests.get(elevation_url)
@@ -172,9 +217,10 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
 
 #Expose via flask
 def getStargazeReport(lat_selected,lon_selected):
-
-    if not isDark(lat_selected, lon_selected):
-        time = getAstroTwilight(lat_selected, lon_selected)
+    if isDark(lat_selected, lon_selected):
+        time = getCurrentUnixTime()
+    else:
+        time = getDarknessTimes(lat_selected, lon_selected)[1]
 
     weatherData = getWeatherToday(lat_selected, lon_selected, time) #allow for other days...
 
