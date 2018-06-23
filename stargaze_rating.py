@@ -26,6 +26,11 @@ lon_selected = ""
 # Look at how to do authentication? HTTPS, SSL Key or whatever
 
 def testDSAPI(weatherdata):
+    """DEBUG function for ensuring sucessful call to DarkSky Weather API.
+
+    args: json weatherdata from DarkSky API
+    returns: None
+    """
     print "*********************************"
     if 'error' in weatherdata.keys():
         print "DARKSKY API RESPONSE ERROR\nHTTP", weatherdata['code'], "-", weatherdata['error']
@@ -35,10 +40,19 @@ def testDSAPI(weatherdata):
 
 
 def getCurrentUnixTime():
+    """Get current time in UNIX format.
+
+    args: none
+    returns: String of 10-digit Unix Time (integer seconds)
+
+    """
     return str(t.mktime(dt.now().timetuple()))[:-2]
 
 
 def getFormattedDarknessTimes(lat_selected, lon_selected):
+    """Get times of day's darnkness start/stop. Formatted into human readable text
+
+    """
     sunset_url = "https://api.sunrise-sunset.org/json?lat="+lat_selected+"&lng="+lon_selected
     # print "ssurl", sunset_url
     request = requests.get(sunset_url)
@@ -75,6 +89,11 @@ def getDarknessTimes(lat_selected, lon_selected):
 
 
 def ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_stagazing_begins_unix):
+    """Pretty prints current time in relation to darkness start/stop times
+
+    args: unix timestamp for current time, morning darkness ends, night darkness begins
+    returns: None
+    """
     times = {
     "prev stargaze_end  ": int(night_stagazing_begins_unix) - 86400,
     "stargaze_end       ": int(morning_stagazing_ends_unix),
@@ -87,34 +106,51 @@ def ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_sta
         print "%s: %s" % (key, value)
 
 def isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_unix):
+    """Checks if it is currently dark enough for stargazing
 
+    args: Unix times for current time, sarkness start/end time
+    returns: Boolean
+    """
     #uugggghhh this is temporary okay
     ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_stagazing_begins_unix)
 
-    # Check if time is during the day or not
+    # Check if time is during the night or not
     # morning_stagazing_ends_unix = end of astronomical twilight, ~1hr to sunrise
     # night_stagazing_begins_unix = start of astronomical, , ~1hr to sunset
     # THEREFORE: Inbetween values is Day, Outside is Night!
     if curr_time_unix <= morning_stagazing_ends_unix or curr_time_unix >= night_stagazing_begins_unix:
+        # Dark enough for stargazing
         print "NIGHT"
         return True
     else:
+        # Not dark enough yet
         print "NO NIGHT YET"
         # Send alert message that this is the case
         return False
 
 
-def getLightPollutionTEST():
+def getLightPollutionTEMP():
+    """ Temport Function! randomly selects one of the light pollution values that API will return"""
     lightpol_levels = [ 0.005, 0.035, 0.085, 0.15, 0.26, 0.455, 0.79, 1.365, 2.365, 4.1, 7.1, 12.295, 21.295, 36.895, 46.77]
     index = int(random.random()*len(lightpol_levels))%len(lightpol_levels)
     return lightpol_levels[index]
 
 
-def getLightPollution():
-    return getLightPollutionTEST()
+def getLightPollution(lat_selected, lon_selected):
+    """Gets the Light Pollution level for the location chosen.
+
+    args: lat/lon for stargazing site
+    returns: Double representation of light pollution levels
+    """
+    return getLightPollutionTEMP()
 
 
 def getWeather(lat_selected, lon_selected, time):
+    """Gets Weather report for location and time specified.
+
+    args: lat/lon and time for stargazing site
+    returns: weather api response in json format
+    """
     darksky_url = "https://api.darksky.net/forecast/efc5a8359eb2564994acd4ec24971d4c/"+lat_selected+","+lon_selected+","+time
     print darksky_url
     request = requests.get(darksky_url)
@@ -122,8 +158,14 @@ def getWeather(lat_selected, lon_selected, time):
 
 
 def getWeatherToday(lat_selected, lon_selected, time):
-    #time = ",time="+str(time) #CHECK which var to actually take
+    """RENAME? Not good name or change the function!
+    Gets Weather report for location and time specified.
 
+    args: lat/lon and time for stargazing site
+    returns: dictionary with just Weather data we're interested in
+    """
+    #TODO: ONLY get data we need from API requests? Would be faster but requires
+    # a lot more manipulation of the url request you use
     weatherdata = getWeather(lat_selected, lon_selected, time)
 
     testDSAPI(weatherdata)
@@ -144,13 +186,22 @@ def getWeatherToday(lat_selected, lon_selected, time):
 
 
 def getCDSChart():
+    """Nearest Clear Dark Sky Chart from A. Danko's site
+
+    args: lat/lon
+    returns: url to CDSC image? link to regular site? both? what if none nearby?
+    """
+    #TODO: How to deal with locations well outside of any nearby CDSC?
+    #TODO What exactly are re returning?
     pass
 
 
 def getLocationData(lat_selected, lon_selected):
-    '''
-    get the site elevation, and distance
-    '''
+    """Gets the elevation and distance to the given coordinates
+
+    args: lat/lon
+    returns: dictionary with elevation, distance in time and space, simple units and human readable
+    """
     maps_api_key = "AIzaSyAPV8hWJYamUd7TCnC6h6YcljuXnFW1lp8"
 
     #un-hardcode origin location
@@ -178,6 +229,11 @@ def getLocationData(lat_selected, lon_selected):
 
 
 def siteRatingDescipt(site_quality):
+    """Describe the site based off it's rating
+
+    args: Site quality 0-100
+    returns: String describing site quality
+    """
     if site_quality > 95:
       site_quality_discript = "Excellent"
     elif site_quality > 90:
@@ -196,6 +252,11 @@ def siteRatingDescipt(site_quality):
 
 
 def calculateRating(precipProbability, humidity, cloudCover, lightPol):
+    """ Calculate the stargazing quality based off weather, light pollution, etc
+    args: site statistics, light pollution
+    returns: Double rating from 0 - 100
+    """
+    # TODO Needs some work. 7 percent cloud cover and otherwise perfect conditions should not be a rating of 77
     #Rate quality based on each parameter
     precip_quality = (1-math.sqrt(precipProbability))
     humid_quality = (math.pow(-humidity+1,(1/3)))
@@ -209,7 +270,10 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
 
 #Expose via flask
 def getStargazeReport(lat_selected,lon_selected):
-
+    """get stargazing report based on given coordinates
+    args: lat/lon
+    returns: dictionary with just data needed for front end by API
+    """
     curr_time_unix = getCurrentUnixTime()
     morning_stagazing_ends_unix, night_stagazing_begins_unix = getDarknessTimes(lat_selected, lon_selected)
 
@@ -227,7 +291,7 @@ def getStargazeReport(lat_selected,lon_selected):
     cloudCover = weatherData["cloudCover"]
     lunarphase = weatherData["moonPhase"]
 
-    lightPol = getLightPollution()
+    lightPol = getLightPollution(lat_selected, lon_selected)
 
     site_quality =  calculateRating(precipProbability, humidity, cloudCover, lightPol)
     site_quality_discript = siteRatingDescipt(site_quality)
