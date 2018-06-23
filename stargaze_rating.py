@@ -1,5 +1,3 @@
-# TODO MAKE it so you can import this into a cmd line thing and get actual data from each thing
-# Look at how to do authentication? or whatever??\
 import requests
 import math
 import random
@@ -22,17 +20,10 @@ lon_selected = ""
 #P2: TIME of Next ISS overpass + visibility
 #P2: TIME of Iridium Flares + visibility
 #P3: Any planets visible, where (specific + rough locations - i.e. az/art and general direction and height)
+#P4: Allow user to specify what time to check?
 
-
-
-#GET WEATHER FOR THAT NIGHT
-# Check time at location, check sunset at location, if before sunset, set to 1hour after sunset!
-# Send alert message that this is the case
-# EX, use:
-# https://api.sunrise-sunset.org/json?lat=36.7201600&lng=-4.4203400&formatted=0
-# BEFORE using DarkSky.
-
-# STAGE 2: allow user to specify time?
+#Front End Things to Worry about later
+# Look at how to do authentication? HTTPS, SSL Key or whatever
 
 def testDSAPI(weatherdata):
     print "*********************************"
@@ -48,21 +39,20 @@ def getCurrentUnixTime():
 
 
 def getFormattedDarknessTimes(lat_selected, lon_selected):
-    sunset_url = "https://api.sunrise-sunset.org/json?lat=3"+lat_selected+"&lng="+lon_selected
+    sunset_url = "https://api.sunrise-sunset.org/json?lat="+lat_selected+"&lng="+lon_selected
     # print "ssurl", sunset_url
     request = requests.get(sunset_url)
     sunset_data = request.json()
-    sunrisetime = sunset_data['results']['sunrise']#['nautical_twilight_begin'] #format:2015-05-21T20:28:21+00:00
-    sunsettime = sunset_data['results']['sunset']#['nautical_twilight_end']
+    morning_stagazing_ends = sunset_data['results']['nautical_twilight_begin'] #format:2015-05-21T20:28:21+00:00
+    night_stagazing_begins = sunset_data['results']['nautical_twilight_end']
 
-    print "sunrise", sunrisetime
-    print "sunset ", sunsettime
+    print "stargaze_end", morning_stagazing_ends
+    print "stargaze_start ", night_stagazing_begins
+
+    return (morning_stagazing_ends, night_stagazing_begins)
 
 
 def getDarknessTimes(lat_selected, lon_selected):
-
-    getFormattedDarknessTimes(lat_selected,lon_selected)
-
     sunset_url = "https://api.sunrise-sunset.org/json?lat="+lat_selected+"&lng="+lon_selected+"&formatted=0"
     request = requests.get(sunset_url)
     sunset_data = request.json()
@@ -72,8 +62,8 @@ def getDarknessTimes(lat_selected, lon_selected):
     morning_stagazing_ends = sunset_data['results']['nautical_twilight_begin'] #format:2015-05-21T20:28:21+00:00
     night_stagazing_begins = sunset_data['results']['nautical_twilight_end']
 
-    print "stargaze_end", morning_stagazing_ends[:-6]
-    print "stargaze_start ", night_stagazing_begins[:-6]
+    # print "stargaze_end", morning_stagazing_ends[:-6]
+    # print "stargaze_start ", night_stagazing_begins[:-6]
 
     morning_stagazing_ends = dt.strptime(morning_stagazing_ends[:-6], '%Y-%m-%dT%H:%M:%S')
     night_stagazing_begins = dt.strptime(night_stagazing_begins[:-6], '%Y-%m-%dT%H:%M:%S')
@@ -85,7 +75,6 @@ def getDarknessTimes(lat_selected, lon_selected):
 
 
 def ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_stagazing_begins_unix):
-
     times = {
     "prev stargaze_end  ": int(night_stagazing_begins_unix) - 86400,
     "stargaze_end       ": int(morning_stagazing_ends_unix),
@@ -97,24 +86,21 @@ def ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_sta
     for key, value in sorted(times.iteritems(), key=lambda (k,v): (v,k)):
         print "%s: %s" % (key, value)
 
-
-def isDark(lat_selected, lon_selected):
-    curr_time_unix = getCurrentUnixTime()
-    morning_stagazing_ends_unix, night_stagazing_begins_unix = getDarknessTimes(lat_selected, lon_selected)
-    # WATCH FOR TIME ZONES, DST ERRORS!
+def isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_unix):
 
     #uugggghhh this is temporary okay
     ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_stagazing_begins_unix)
 
     # Check if time is during the day or not
-    # AstroEnd = start of (almost) sunrise
-    # AstroStart = end of (almost) sunset
+    # morning_stagazing_ends_unix = end of astronomical twilight, ~1hr to sunrise
+    # night_stagazing_begins_unix = start of astronomical, , ~1hr to sunset
     # THEREFORE: Inbetween values is Day, Outside is Night!
     if curr_time_unix <= morning_stagazing_ends_unix or curr_time_unix >= night_stagazing_begins_unix:
         print "NIGHT"
         return True
     else:
         print "NO NIGHT YET"
+        # Send alert message that this is the case
         return False
 
 
@@ -223,10 +209,16 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
 
 #Expose via flask
 def getStargazeReport(lat_selected,lon_selected):
-    if isDark(lat_selected, lon_selected):
-        time = getCurrentUnixTime()
+
+    curr_time_unix = getCurrentUnixTime()
+    morning_stagazing_ends_unix, night_stagazing_begins_unix = getDarknessTimes(lat_selected, lon_selected)
+
+    if isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_unix):
+        time = curr_time_unix
     else:
         time = getDarknessTimes(lat_selected, lon_selected)[1]
+        #TODO User-facing message that time set to ___
+        print "Not night time yet! Getting stargazing report for ", time
 
     weatherData = getWeatherToday(lat_selected, lon_selected, time) #allow for other days...
 
