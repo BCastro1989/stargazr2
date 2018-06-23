@@ -63,17 +63,17 @@ def getDarknessTimes(lat_selected, lon_selected):
 
     getFormattedDarknessTimes(lat_selected,lon_selected)
 
-    sunset_url = "https://api.sunrise-sunset.org/json?lat=3"+lat_selected+"&lng="+lon_selected+"&formatted=0"
+    sunset_url = "https://api.sunrise-sunset.org/json?lat="+lat_selected+"&lng="+lon_selected+"&formatted=0"
     request = requests.get(sunset_url)
     sunset_data = request.json()
-    
+
     #start of astronomical twilight. Good enough to begin stargazing
     #Nautical Twilight End = Start of Astronomical Twilight and vice-versa
-    morning_stagazing_ends = sunset_data['results']['sunrise']#['nautical_twilight_begin'] #format:2015-05-21T20:28:21+00:00
-    night_stagazing_begins = sunset_data['results']['sunset']#['nautical_twilight_end']
+    morning_stagazing_ends = sunset_data['results']['nautical_twilight_begin'] #format:2015-05-21T20:28:21+00:00
+    night_stagazing_begins = sunset_data['results']['nautical_twilight_end']
 
-    print "sunrise", morning_stagazing_ends[:-6]
-    print "sunset ", night_stagazing_begins[:-6]
+    print "stargaze_end", morning_stagazing_ends[:-6]
+    print "stargaze_start ", night_stagazing_begins[:-6]
 
     morning_stagazing_ends = dt.strptime(morning_stagazing_ends[:-6], '%Y-%m-%dT%H:%M:%S')
     night_stagazing_begins = dt.strptime(night_stagazing_begins[:-6], '%Y-%m-%dT%H:%M:%S')
@@ -87,11 +87,11 @@ def getDarknessTimes(lat_selected, lon_selected):
 def ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_stagazing_begins_unix):
 
     times = {
-    "prev sunset    ": int(night_stagazing_begins_unix) - 86400,
-    "sunrise        ": int(morning_stagazing_ends_unix),
-    "***curr_time***": int(curr_time_unix),
-    "sunset         ": int(night_stagazing_begins_unix),
-    "next sunrise   ": int(morning_stagazing_ends_unix) + 86400,
+    "prev stargaze_end  ": int(night_stagazing_begins_unix) - 86400,
+    "stargaze_end       ": int(morning_stagazing_ends_unix),
+    "***curr_time***    ": int(curr_time_unix),
+    "stargaze_start     ": int(night_stagazing_begins_unix),
+    "next stargaze_start": int(morning_stagazing_ends_unix) + 86400,
     }
 
     for key, value in sorted(times.iteritems(), key=lambda (k,v): (v,k)):
