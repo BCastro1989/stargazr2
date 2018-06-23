@@ -42,9 +42,9 @@ def testDSAPI(weatherdata):
         print "DARKSKY API RESPONSE SUCESS"
     print "*********************************"
 
-def getCurrentUnixTime():
-    return str(t.mktime(dt.utcnow().timetuple()))[:-2]
 
+def getCurrentUnixTime():
+    return str(t.mktime(dt.now().timetuple()))[:-2]
 
 
 def getFormattedDarknessTimes(lat_selected, lon_selected):
@@ -64,13 +64,10 @@ def getDarknessTimes(lat_selected, lon_selected):
     getFormattedDarknessTimes(lat_selected,lon_selected)
 
     sunset_url = "https://api.sunrise-sunset.org/json?lat=3"+lat_selected+"&lng="+lon_selected+"&formatted=0"
-    # print "ssurl", sunset_url
     request = requests.get(sunset_url)
     sunset_data = request.json()
+    
     #start of astronomical twilight. Good enough to begin stargazing
-
-    # print sunset_data
-
     #Nautical Twilight End = Start of Astronomical Twilight and vice-versa
     morning_stagazing_ends = sunset_data['results']['sunrise']#['nautical_twilight_begin'] #format:2015-05-21T20:28:21+00:00
     night_stagazing_begins = sunset_data['results']['sunset']#['nautical_twilight_end']
@@ -86,6 +83,7 @@ def getDarknessTimes(lat_selected, lon_selected):
 
     return (morning_stagazing_ends_unix, night_stagazing_begins_unix)
 
+
 def ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_stagazing_begins_unix):
 
     times = {
@@ -98,7 +96,6 @@ def ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_sta
 
     for key, value in sorted(times.iteritems(), key=lambda (k,v): (v,k)):
         print "%s: %s" % (key, value)
-
 
 
 def isDark(lat_selected, lon_selected):
@@ -120,19 +117,23 @@ def isDark(lat_selected, lon_selected):
         print "NO NIGHT YET"
         return False
 
+
 def getLightPollutionTEST():
     lightpol_levels = [ 0.005, 0.035, 0.085, 0.15, 0.26, 0.455, 0.79, 1.365, 2.365, 4.1, 7.1, 12.295, 21.295, 36.895, 46.77]
     index = int(random.random()*len(lightpol_levels))%len(lightpol_levels)
     return lightpol_levels[index]
 
+
 def getLightPollution():
     return getLightPollutionTEST()
+
 
 def getWeather(lat_selected, lon_selected, time):
     darksky_url = "https://api.darksky.net/forecast/efc5a8359eb2564994acd4ec24971d4c/"+lat_selected+","+lon_selected+","+time
     print darksky_url
     request = requests.get(darksky_url)
     return request.json()
+
 
 def getWeatherToday(lat_selected, lon_selected, time):
     #time = ",time="+str(time) #CHECK which var to actually take
@@ -155,8 +156,10 @@ def getWeatherToday(lat_selected, lon_selected, time):
         "moonPhase":moonPhase,
     }
 
+
 def getCDSChart():
     pass
+
 
 def getLocationData(lat_selected, lon_selected):
     '''
@@ -187,6 +190,7 @@ def getLocationData(lat_selected, lon_selected):
 
     return location_data
 
+
 def siteRatingDescipt(site_quality):
     if site_quality > 95:
       site_quality_discript = "Excellent"
@@ -204,6 +208,7 @@ def siteRatingDescipt(site_quality):
       site_quality_discript = "Error: Select a site again"
     return site_quality_discript
 
+
 def calculateRating(precipProbability, humidity, cloudCover, lightPol):
     #Rate quality based on each parameter
     precip_quality = (1-math.sqrt(precipProbability))
@@ -214,6 +219,7 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
     #Find overall site quality
     site_quality_rating = ((((precip_quality * lightpol_quality * cloud_quality)*8) + (humid_quality*2))/10)*100
     return site_quality_rating
+
 
 #Expose via flask
 def getStargazeReport(lat_selected,lon_selected):
