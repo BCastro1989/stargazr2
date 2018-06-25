@@ -7,6 +7,7 @@ from datetime import datetime as dt
 import time as t
 import iso8601 #DEPENDENCY pip install it
 from light_pollution import getLightPollution
+import debug
 
 
 # elevation_url = "https://maps.googleapis.com/maps/api/elevation/json?locations="+lat_selected+","+lon_selected+"&key=AIzaSyAPV8hWJYamUd7TCnC6h6YcljuXnFW1lp8"
@@ -24,19 +25,6 @@ from light_pollution import getLightPollution
 
 #Front End Things to Worry about later
 # Look at how to do authentication? HTTPS, SSL Key or whatever
-
-def testDSAPI(weatherdata):
-    """DEBUG function for ensuring sucessful call to DarkSky Weather API.
-
-    args: json weatherdata from DarkSky API
-    returns: None
-    """
-    print "*********************************"
-    if 'error' in weatherdata.keys():
-        print "DARKSKY API RESPONSE ERROR\nHTTP", weatherdata['code'], "-", weatherdata['error']
-    else:
-        print "DARKSKY API RESPONSE SUCESS"
-    print "*********************************"
 
 
 def getCurrentUnixTime():
@@ -88,23 +76,6 @@ def getDarknessTimes(lat_selected, lon_selected):
     return (morning_stagazing_ends_unix, night_stagazing_begins_unix)
 
 
-def ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_stagazing_begins_unix):
-    """Pretty prints current time in relation to darkness start/stop times
-
-    args: unix timestamp for current time, morning darkness ends, night darkness begins
-    returns: None
-    """
-    times = {
-    "prev stargaze_start": int(night_stagazing_begins_unix) - 86400,
-    "stargaze_end       ": int(morning_stagazing_ends_unix),
-    "***curr_time***    ": int(curr_time_unix),
-    "stargaze_start     ": int(night_stagazing_begins_unix),
-    "next stargaze_end  ": int(morning_stagazing_ends_unix) + 86400,
-    }
-
-    for key, value in sorted(times.iteritems(), key=lambda (k,v): (v,k)):
-        print "%s: %s" % (key, value)
-
 def isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_unix):
     """Checks if it is currently dark enough for stargazing
 
@@ -112,7 +83,7 @@ def isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_u
     returns: Boolean
     """
     #uugggghhh this is temporary okay
-    ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_stagazing_begins_unix)
+    debug.ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_stagazing_begins_unix)
 
     # Check if time is during the night or not
     # morning_stagazing_ends_unix = end of astronomical twilight, ~1hr to sunrise
@@ -120,11 +91,11 @@ def isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_u
     # THEREFORE: Inbetween values is Day, Outside is Night!
     if curr_time_unix <= morning_stagazing_ends_unix or curr_time_unix >= night_stagazing_begins_unix:
         # Dark enough for stargazing
-        print "NIGHT"
+        print "NIGHT\n"
         return True
     else:
         # Not dark enough yet
-        print "NO NIGHT YET"
+        print "NO NIGHT YET\n"
         # Send alert message that this is the case
         return False
 
@@ -135,7 +106,6 @@ def getWeather(lat_selected, lon_selected, time):
     returns: weather api response in json format
     """
     darksky_url = "https://api.darksky.net/forecast/efc5a8359eb2564994acd4ec24971d4c/"+lat_selected+","+lon_selected+","+time
-    print darksky_url
     request = requests.get(darksky_url)
     return request.json()
 
@@ -151,7 +121,7 @@ def getWeatherToday(lat_selected, lon_selected, time):
     # a lot more manipulation of the url request you use
     weatherdata = getWeather(lat_selected, lon_selected, time)
 
-    testDSAPI(weatherdata)
+    debug.testDSAPI(weatherdata)
 
     precipProbability = weatherdata['currently']['precipProbability']
     humidity = weatherdata['currently']['humidity']
@@ -189,9 +159,6 @@ def getLocationData(lat_selected, lon_selected):
     #un-hardcode origin location
     dist_url = "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins=San+Francisco,CA&destinations="+lat_selected+","+lon_selected+"&key="+maps_api_key
     elevation_url = "https://maps.googleapis.com/maps/api/elevation/json?locations="+lat_selected+","+lon_selected+"&key="+maps_api_key
-
-    print "dist_url     ", dist_url
-    print "elevation_url", elevation_url
 
     dist_request = requests.get(dist_url)
     elev_request = requests.get(elevation_url)
@@ -247,6 +214,8 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
 
     #Find overall site quality
     site_quality_rating = ((((precip_quality * lightpol_quality * cloud_quality)*8) + (humid_quality*2))/10)*100
+
+    debug.ppSiteRatingBreakdown(precipProbability, humidity, cloudCover, lightPol, precip_quality, humid_quality, cloud_quality, lightpol_quality, site_quality_rating)
     return site_quality_rating
 
 
@@ -296,5 +265,5 @@ def getStargazeReport(lat_selected,lon_selected):
     return siteData
 
 result = getStargazeReport(37.7360512,-122.4997348)
-print "RESULT"
+print "********** RESULT **********"
 print pprint.pprint(result)

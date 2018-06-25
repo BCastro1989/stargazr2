@@ -105,15 +105,15 @@ def getLightPollution(lat,lon):#request):
 
     try:
         image_path = os.path.join(tiles_dir_path, image_name)
-        print "Trying to open image: %s" % image_path #TODO convert to logging
+        #print "Trying to open image: %s" % image_path #TODO convert to logging
         image = Image.open(image_path)
-        print "Looking up pixel ({},{})".format(pixel_x, pixel_y) #TODO convert to logging
+        #print "Looking up pixel ({},{})".format(pixel_x, pixel_y) #TODO convert to logging
         pixel_value_old = image.getpixel((pixel_x, pixel_y))
         rgb_img = image.convert("RGB")
         pix = rgb_img.load()
         pixel_value = pix[pixel_x, pixel_y]
         light_poll_ratio = pixel_lightpoll_table[str(pixel_value)]
-        print image_name, pixel_value_old, pixel_value, light_poll_ratio
+        # print image_name, pixel_value_old, pixel_value, light_poll_ratio
     except KeyError as e:
         print "Error, color does not match any known in key"
         light_poll_ratio = "N/A"
