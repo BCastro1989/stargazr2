@@ -1,2 +1,4 @@
 dontcommit/
 ignore/
+*.pyc
+

@@ -1,13 +1,13 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
 import requests
 import math
-import random
 import pprint
 from datetime import datetime as dt
 import time as t
 import iso8601 #DEPENDENCY pip install it
+from light_pollution import getLightPollution
 
-lat_selected = ""
-lon_selected = ""
 
 # elevation_url = "https://maps.googleapis.com/maps/api/elevation/json?locations="+lat_selected+","+lon_selected+"&key=AIzaSyAPV8hWJYamUd7TCnC6h6YcljuXnFW1lp8"
 # #darksky_url = "http://stargazr.us-west-2.elasticbeanstalk.com/weather?lat="+lat_selected+"&lng="+lon_selected;
@@ -15,12 +15,12 @@ lon_selected = ""
 # lightpol_url = "http://stargazr.us-west-2.elasticbeanstalk.com/brightness?lat="+lat_selected+"&lng="+lon_selected;
 
 #Things this API could use
-#P0: SKY BRIGHTNESS = NO DAYTIME REPORTS!!!
-#P1: URL for img of nearest CLEAR SKY Chart, none if > 100 miles, display distance to site (+name?)
-#P2: TIME of Next ISS overpass + visibility
-#P2: TIME of Iridium Flares + visibility
-#P3: Any planets visible, where (specific + rough locations - i.e. az/art and general direction and height)
-#P4: Allow user to specify what time to check?
+#P0: [✓] No stargazing reports during the day
+#P1: [ ] URL for img of nearest CLEAR SKY Chart, none if > 100 miles, display distance to site (+name?)
+#P2: [ ] TIME of Next ISS overpass + visibility
+#P2: [ ] TIME of Iridium Flares + visibility
+#P3: [ ] Any planets visible, where (specific + rough locations - i.e. az/art and general direction and height)
+#P4: [ ] Allow user to specify what time to check?
 
 #Front End Things to Worry about later
 # Look at how to do authentication? HTTPS, SSL Key or whatever
@@ -95,11 +95,11 @@ def ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_sta
     returns: None
     """
     times = {
-    "prev stargaze_end  ": int(night_stagazing_begins_unix) - 86400,
+    "prev stargaze_start": int(night_stagazing_begins_unix) - 86400,
     "stargaze_end       ": int(morning_stagazing_ends_unix),
     "***curr_time***    ": int(curr_time_unix),
     "stargaze_start     ": int(night_stagazing_begins_unix),
-    "next stargaze_start": int(morning_stagazing_ends_unix) + 86400,
+    "next stargaze_end  ": int(morning_stagazing_ends_unix) + 86400,
     }
 
     for key, value in sorted(times.iteritems(), key=lambda (k,v): (v,k)):
@@ -127,23 +127,6 @@ def isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_u
         print "NO NIGHT YET"
         # Send alert message that this is the case
         return False
-
-
-def getLightPollutionTEMP():
-    """ Temport Function! randomly selects one of the light pollution values that API will return"""
-    lightpol_levels = [ 0.005, 0.035, 0.085, 0.15, 0.26, 0.455, 0.79, 1.365, 2.365, 4.1, 7.1, 12.295, 21.295, 36.895, 46.77]
-    index = int(random.random()*len(lightpol_levels))%len(lightpol_levels)
-    return lightpol_levels[index]
-
-
-def getLightPollution(lat_selected, lon_selected):
-    """Gets the Light Pollution level for the location chosen.
-
-    args: lat/lon for stargazing site
-    returns: Double representation of light pollution levels
-    """
-    return getLightPollutionTEMP()
-
 
 def getWeather(lat_selected, lon_selected, time):
     """Gets Weather report for location and time specified.
@@ -175,7 +158,6 @@ def getWeatherToday(lat_selected, lon_selected, time):
     visibility = weatherdata['currently']['visibility']
     cloudCover = weatherdata['currently']['cloudCover']
     moonPhase = weatherdata['daily']['data'][0]['moonPhase'] #0 tells to grab todays phase. allows 0-7
-    print cloudCover
     return {
         "precipProbability":precipProbability,
         "humidity":humidity,
@@ -262,7 +244,7 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
     humid_quality = (math.pow(-humidity+1,(1/3)))
     cloud_quality = (1-math.sqrt(cloudCover))
     lightpol_quality = (abs(50-lightPol)/50) #should give rating between 0.9995 (Middle of Nowhere) - 0.0646 (Downtown LA)
-    print precipProbability, ">", precip_quality, "---", humidity, ">", humid_quality, "---", cloudCover, ">", cloud_quality, "---", lightPol, ">", lightpol_quality
+
     #Find overall site quality
     site_quality_rating = ((((precip_quality * lightpol_quality * cloud_quality)*8) + (humid_quality*2))/10)*100
     return site_quality_rating
@@ -270,21 +252,23 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
 
 #Expose via flask
 def getStargazeReport(lat_selected,lon_selected):
+    lat_str = str(lat_selected)
+    lon_str = str(lon_selected)
     """get stargazing report based on given coordinates
     args: lat/lon
     returns: dictionary with just data needed for front end by API
     """
     curr_time_unix = getCurrentUnixTime()
-    morning_stagazing_ends_unix, night_stagazing_begins_unix = getDarknessTimes(lat_selected, lon_selected)
+    morning_stagazing_ends_unix, night_stagazing_begins_unix = getDarknessTimes(lat_str, lon_str)
 
     if isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_unix):
         time = curr_time_unix
     else:
-        time = getDarknessTimes(lat_selected, lon_selected)[1]
+        time = getDarknessTimes(lat_str, lon_str)[1]
         #TODO User-facing message that time set to ___
         print "Not night time yet! Getting stargazing report for ", time
 
-    weatherData = getWeatherToday(lat_selected, lon_selected, time) #allow for other days...
+    weatherData = getWeatherToday(lat_str, lon_str, time) #allow for other days...
 
     precipProbability = weatherData["precipProbability"]
     humidity = weatherData["humidity"]
@@ -306,11 +290,11 @@ def getStargazeReport(lat_selected,lon_selected):
         "lunarphase": lunarphase,
     }
 
-    location_data = getLocationData(lat_selected, lon_selected)
+    location_data = getLocationData(lat_str, lon_str)
     siteData.update(location_data)
 
     return siteData
 
-result = getStargazeReport("37.7360512","-122.4997348")
+result = getStargazeReport(37.7360512,-122.4997348)
 print "RESULT"
 print pprint.pprint(result)
