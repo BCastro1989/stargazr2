@@ -34,7 +34,7 @@ def getCurrentUnixTime():
     returns: String of 10-digit Unix Time (integer seconds)
 
     """
-    return str(t.mktime(dt.now().timetuple()))[:-2]
+    return int(t.time())
 
 
 def getFormattedDarknessTimes(lat_selected, lon_selected):
@@ -70,8 +70,8 @@ def getDarknessTimes(lat_selected, lon_selected):
     morning_stagazing_ends = dt.strptime(morning_stagazing_ends[:-6], '%Y-%m-%dT%H:%M:%S')
     night_stagazing_begins = dt.strptime(night_stagazing_begins[:-6], '%Y-%m-%dT%H:%M:%S')
 
-    morning_stagazing_ends_unix = str((morning_stagazing_ends - dt(1970, 1, 1)).total_seconds())[:-2]
-    night_stagazing_begins_unix = str((night_stagazing_begins - dt(1970, 1, 1)).total_seconds())[:-2]
+    morning_stagazing_ends_unix = int((morning_stagazing_ends - dt(1970, 1, 1)).total_seconds())
+    night_stagazing_begins_unix = int((night_stagazing_begins - dt(1970, 1, 1)).total_seconds())
 
     return (morning_stagazing_ends_unix, night_stagazing_begins_unix)
 
@@ -105,7 +105,7 @@ def getWeather(lat_selected, lon_selected, time):
     args: lat/lon and time for stargazing site
     returns: weather api response in json format
     """
-    darksky_url = "https://api.darksky.net/forecast/efc5a8359eb2564994acd4ec24971d4c/"+lat_selected+","+lon_selected+","+time
+    darksky_url = "https://api.darksky.net/forecast/efc5a8359eb2564994acd4ec24971d4c/"+lat_selected+","+lon_selected+","+str(time)
     request = requests.get(darksky_url)
     return request.json()
 
