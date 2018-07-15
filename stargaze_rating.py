@@ -137,7 +137,7 @@ def getWeatherToday(lat_selected, lon_selected, time):
     }
 
 
-def getCDSChart():
+def getCDSChart(lat, lon):
     """Nearest Clear Dark Sky Chart from A. Danko's site
 
     args: lat/lon
@@ -145,7 +145,38 @@ def getCDSChart():
     """
     #TODO: How to deal with locations well outside of any nearby CDSC?
     #TODO What exactly are re returning?
-    pass
+
+    # lat, lon = 37.7360512, -122.4997348
+
+    import json
+    import math
+    with open('csc_sites.json', 'r') as f:
+        data = json.load(f)
+        nearby_cdsc = []
+        print lat, lon
+        try:
+            for x in xrange(-1,2):
+                for y in xrange(-1,2):
+                    lat_str = str(int(lat+x))
+                    lon_str = str(int(lon+y))
+                    if lat_str in data:
+                        if lon_str in data[lat_str]:
+                            sites_in_bin = data[lat_str][lon_str]
+                            for site in sites_in_bin:
+                                nearby_cdsc.append(site)
+        except:
+            print "err"
+        closest_dist = 100
+        closest_site = ""
+        for site in nearby_cdsc:
+            site_lat = site["lat"]
+            site_lon = site["lon"]
+            dist = math.sqrt( (site_lat-lat)**2 + (site_lon-lon)**2 )
+            if dist < closest_dist:
+                closest_dist = dist
+                closest_site = site
+        return (closest_site, closest_dist)
+
 
 
 def getLocationData(lat_selected, lon_selected):
@@ -267,3 +298,5 @@ def getStargazeReport(lat_selected,lon_selected):
 result = getStargazeReport(37.7360512,-122.4997348)
 print "********** RESULT **********"
 print pprint.pprint(result)
+
+print getCDSChart(1, 2)
