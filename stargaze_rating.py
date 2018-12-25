@@ -9,20 +9,15 @@ import iso8601 #DEPENDENCY pip install it
 from light_pollution import getLightPollution
 import debug
 import json
-
-
-# elevation_url = "https://maps.googleapis.com/maps/api/elevation/json?locations="+lat_selected+","+lon_selected+"&key=AIzaSyAPV8hWJYamUd7TCnC6h6YcljuXnFW1lp8"
-# #darksky_url = "http://stargazr.us-west-2.elasticbeanstalk.com/weather?lat="+lat_selected+"&lng="+lon_selected;
-# darksky_url = "https://api.darksky.net/forecast/efc5a8359eb2564994acd4ec24971d4c/"+lat_selected+","+lon_selected
-# lightpol_url = "http://stargazr.us-west-2.elasticbeanstalk.com/brightness?lat="+lat_selected+"&lng="+lon_selected;
+import flask
 
 #Things this API could use
 #P0: [✓] No stargazing reports during the day
-#P1: [✓] URL for img of nearest CLEAR SKY Chart, none if > 100 miles, display distance to site (+name?)
-#P2: [ ] TIME of Next ISS overpass + visibility
-#P2: [ ] TIME of Iridium Flares + visibility
-#P3: [ ] Any planets visible, where (specific + rough locations - i.e. az/art and general direction and height)
-#P4: [ ] Allow user to specify what time to check?
+#P1: [✓] URL for img of nearest CLEAR SKY Chart, none if > 100 miles, display distance to site + name?
+#P2: [✓] Allow user to specify what time to check?
+#P3: [ ] TIME of Next ISS overpass + visibility, az/alt
+#P4: [ ] TIME of Iridium Flares + visibility
+#P4: [ ] Any planets visible, where (specific + rough locations - i.e. az/art and general direction and height)
 
 #Front End Things to Worry about later
 # Look at how to do authentication? HTTPS, SSL Key or whatever
@@ -129,18 +124,18 @@ def getWeatherToday(lat_selected, lon_selected, time):
 
     debug.testDSAPI(weatherdata)
 
-    precipProbability = weatherdata['currently']['precipProbability']
+    precip_prob = weatherdata['currently']['precipProbability']
     humidity = weatherdata['currently']['humidity']
     visibility = weatherdata['currently']['visibility']
-    cloudCover = weatherdata['currently']['cloudCover']
-    moonPhase = weatherdata['daily']['data'][0]['moonPhase'] #0 tells to grab todays phase. allows 0-7
+    cloud_cover = weatherdata['currently']['cloudCover']
+    moon_phase = weatherdata['daily']['data'][0]['moonPhase'] #0 tells to grab todays phase. allows 0-7
 
     return {
-        "precipProbability":precipProbability,
+        "precipProb":precip_prob,
         "humidity":humidity,
         "visibility":visibility,
-        "cloudCover":cloudCover,
-        "moonPhase":moonPhase,
+        "cloudCover":cloud_cover,
+        "moonPhase":moon_phase,
     }
 
 
@@ -172,7 +167,7 @@ def getCDSChart(lat, lon):
         no sites within 100km, return None
     """
     # get list of all csc site locations
-    with open('csc_sites.json', 'r') as f:
+    with open('csc_sites2.json', 'r') as f:
         data = json.load(f)
         nearby_cdsc = []
         print lat, lon
@@ -200,20 +195,16 @@ def getCDSChart(lat, lon):
             site_lat = site["lat"]
             site_lon = site["lon"]
             dist = math.sqrt( (site_lat-lat)**2 + (site_lon-lon)**2 )
-            print dist
             if dist < closest_dist:
                 closest_dist = dist
                 closest_site = site
-                print lat, lon, "|", site_lat, site_lon
                 dist_km = latlonDistanceInKm(lat, lon, site_lat, site_lon)
 
         #grab site url and return site data if within 100km
         if dist_km < 100:
-            site_id = closest_site["id"]
-            url = "http://www.cleardarksky.com/c/"+site_id+"csk.gif"
-            closest_site["url"] = url
+            closest_site['dist_km'] = dist_km
+            return closest_site
 
-            return (closest_site, dist_km)
         return None
 
 #TODO: Distance and elevation should probably be two meothds (since two calls)
@@ -287,7 +278,7 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
     returns: Double rating from 0 - 100
     """
     # TODO Needs some work. 7 percent cloud cover and otherwise perfect conditions should not be a rating of 77
-    #Rate quality based on each parameter
+    # Rate quality based on each parameter
     precip_quality = (1-math.sqrt(precipProbability))
     humid_quality = (math.pow(-humidity+1,(1/3)))
     cloud_quality = (1-math.sqrt(cloudCover))
@@ -303,46 +294,46 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
 
 #TODO: Expose via flask
 #TODO: CleanUp/Refactor
-def getStargazeReport(lat_selected,lon_selected):
+def getStargazeReport(lat,lon,time=None):
     """get stargazing report based on given coordinates.
 
     args: lat/lon
     returns: dictionary with just data needed for front end by API
     """
+    lat_str = str(lat)
+    lon_str = str(lon)
 
-    lat_str = str(lat_selected)
-    lon_str = str(lon_selected)
-
-    curr_time_unix = getCurrentUnixTime()
-    morning_stagazing_ends_unix, night_stagazing_begins_unix = getDarknessTimes(lat_str, lon_str)
-
-    if isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_unix):
-        time = curr_time_unix
-    else:
-        time = getDarknessTimes(lat_str, lon_str)[1]
-        #TODO User-facing message that time set to ___
-        print "Not night time yet! Getting stargazing report for ", time
+    #No time is given, assume now or once it gets dark tonight
+    if not time:
+        curr_time_unix = getCurrentUnixTime()
+        morning_stagazing_ends_unix, night_stagazing_begins_unix = getDarknessTimes(lat_str, lon_str)
+        if isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_unix):
+            time = curr_time_unix
+        else:
+            time = getDarknessTimes(lat_str, lon_str)[1]
+            #TODO User-facing message that time set to ___
+            print "Not night time yet! Getting stargazing report for ", time
 
     weatherData = getWeatherToday(lat_str, lon_str, time) #allow for other days...
 
-    precipProbability = weatherData["precipProbability"]
+    precip_prob = weatherData["precipProb"]
     humidity = weatherData["humidity"]
-    cloudCover = weatherData["cloudCover"]
+    cloud_cover = weatherData["cloudCover"]
     lunarphase = weatherData["moonPhase"]
-
-    lightPol = getLightPollution(lat_selected, lon_selected)
-
-    site_quality =  calculateRating(precipProbability, humidity, cloudCover, lightPol)
+    cds_chart = getCDSChart(lat,lon)
+    light_pol = getLightPollution(lat,lon)
+    site_quality =  calculateRating(precip_prob, humidity, cloud_cover, light_pol)
     site_quality_discript = siteRatingDescipt(site_quality)
 
     siteData = {
-        "site_quality": site_quality,
-        "site_quality_discript": site_quality_discript,
-        "precipProbability": precipProbability,
+        "siteQuality": site_quality,
+        "siteQualityDiscript": site_quality_discript,
+        "precipProb": precip_prob,
         "humidity": humidity,
-        "cloudCover": cloudCover,
-        "lightPol": lightPol,
+        "cloudCover": cloud_cover,
+        "lightPol": light_pol,
         "lunarphase": lunarphase,
+        "CDSChart": cds_chart
     }
 
     location_data = getLocationData(lat_str, lon_str)
@@ -351,15 +342,17 @@ def getStargazeReport(lat_selected,lon_selected):
     return siteData
 
 #Test stargazing in San Francisco
-result = getStargazeReport(37.7360512,-122.4997348)
+result = getStargazeReport(37.7360512,-122.4997348)#+86k=+1day
 print "********** SF TEST **********"
 print pprint.pprint(result)
 
-#Test CDSC in San Francisco
-print getCDSChart(37.7360512,-122.4997348)
 
-
-#Test stargazing in Australian Outback
-result = getStargazeReport(-24.5906227,129.5304454)
-print "********** OZ TEST **********"
+#Test stargazing in San Francisco
+result = getStargazeReport(37.7360512,-122.4997348, 1545673406)#+86k=+1day
+print "********** SF TEST **********"
 print pprint.pprint(result)
+
+# #Test stargazing in Australian Outback
+# result = getStargazeReport(-24.5906227,129.5304454)
+# print "********** OZ TEST **********"
+# print pprint.pprint(result)

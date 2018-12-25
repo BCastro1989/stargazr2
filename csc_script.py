@@ -56,13 +56,13 @@ from collections import defaultdict
 import json
 csc_binned = defaultdict(dict)
 
-with open("csc_out.txt", 'w+') as f:
+with open("csc_out2.txt", 'w+') as f:
     for site in csc_data:
         site_name = csc_names[site["id"]]
         text_line = site["id"]+"|"+site_name+"|"+site["loc"]+"|"+str(site["lat"])+"|"+str(site["lon"])+"\n"
         f.write(text_line)
 
-with open("csc_sites.json", 'w+') as f:
+with open("csc_sites2.json", 'w+') as f:
     for site in csc_data:
         site_name = csc_names[site["id"]]
         site_info = {
@@ -70,7 +70,8 @@ with open("csc_sites.json", 'w+') as f:
          "name": site_name,
          "loc": site["loc"],
          "lat": site["lat"],
-         "lon": site["lon"]
+         "lon": site["lon"],
+         "url": "http://www.cleardarksky.com/c/"+site["id"]+"csk.gif",
          }
 
         if int(site["lon"]) not in csc_binned[int(site["lat"])]:
