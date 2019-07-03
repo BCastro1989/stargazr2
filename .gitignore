@@ -3,3 +3,4 @@ ignore/
 *.pyc
 csc_good.txt
 csc_out2.txt
+closest_csc.py

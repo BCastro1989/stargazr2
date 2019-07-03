@@ -17,7 +17,7 @@ app = Flask(__name__)
 # P1: [✓] URL for img of nearest CLEAR SKY Chart, none if > 100 miles, display distance to site + name?
 # P2: [✓] Allow user to specify what time to check?
 # P3: [ ] TIME of Next ISS overpass + visibility, az/alt
-# P4: [ ] TIME of Iridium Flares + visibility (1st gen Iridiums are gone?)
+# P4: [ ] TIME of Iridium Flares + visibility (1st gen Iridiums are gone?) - Not worth it but link until last deorbist?
 # P4: [ ] Any planets visible, where (specific + rough locations - i.e. az/art and general direction and height)
 # P4: [ ] Key Meisser Objects, and other popular deep sky objects
 
@@ -31,23 +31,52 @@ def getCurrentUnixTime():
     return int(t.time())
 
 
-def getDarknessTimes(lat_selected, lon_selected):
+def convertUnixToYMDFormat(unixtime):
+    """Convert time from unix epoch to Human Readable YYYY-MM-DD
+
+    args: int representing unix time
+    returns: String representing time in YYYY-MM-DD
+    """
+    return dt.utcfromtimestamp(unixtime).strftime("%Y-%m-%d")
+
+
+def convertYMDHStoUnixFormat(timestamp):
+    """Convert time to Human Readable YYYY-MM-DD from unix epoch
+
+    How deal with timezones????
+
+    args: String representing time in YYYY-MM-DD
+    returns: int representing unix time
+    """
+    pass
+
+def getDarknessTimes(lat_selected, lon_selected, time):
     """Get times of day's darkness start/stop as unix time
 
     args: String representing lat/lon coords
     returns: Int of 10-digit Unix Time (integer seconds)
     """
+    strtime = ""
+    if time:
+        strtime = "&date="+str(convertUnixToYMDFormat(time))
+
     # TODO: Currently only returns darkness times for today, must work for next 48 hours
     # API accepts date paramter but in YYYY-MM-DD format, not unix time
-    sunset_url = "https://api.sunrise-sunset.org/json?lat="+lat_selected+"&lng="+lon_selected+"&formatted=0"
+    sunset_url = "https://api.sunrise-sunset.org/json?lat="+lat_selected+"&lng="+lon_selected+"&formatted=0"+strtime
+    print(sunset_url)
 
     request = requests.get(sunset_url)
     sunset_data = request.json()
+
+    print(sunset_data)
 
     # TODO: These times may be meaningless above/below (An)arctic Circle.
     # Check what API results are for arctic locations at different times of year
     # If Midnight Sun, tell user no stargazing possible :(
     # If Polar Night, they can stargaze whenever they want! :)
+
+    # TODO: I just found out the times here dont account for Daylight Savings.
+    # This may or may not be an issue...
 
     # start of astronomical twilight is good enough to begin stargazing
     # Nautical Twilight End = Start of Astronomical Twilight and vice-versa
@@ -60,6 +89,9 @@ def getDarknessTimes(lat_selected, lon_selected):
     morning_stagazing_ends_unix = int((morning_stagazing_ends - dt(1970, 1, 1)).total_seconds())
     night_stagazing_begins_unix = int((night_stagazing_begins - dt(1970, 1, 1)).total_seconds())
 
+    print(morning_stagazing_ends_unix)
+    print(night_stagazing_begins_unix)
+
     return (morning_stagazing_ends_unix, night_stagazing_begins_unix)
 
 
@@ -69,7 +101,7 @@ def isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_u
     args: Unix times for current time, darkness start/end time
     returns: Boolean
     """
-    # pretty print for debugging
+    # pretty print(for debugging)
     # debug.ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_stagazing_begins_unix)
 
     # Check if time is during the night or not
@@ -78,11 +110,11 @@ def isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_u
     # THEREFORE: Inbetween values is Day, Outside is Night!
     if curr_time_unix <= morning_stagazing_ends_unix or curr_time_unix >= night_stagazing_begins_unix:
         # Dark enough for stargazing
-        # print "NIGHT\n"
+        # print("NIGHT\n")
         return True
     else:
         # Not dark enough yet
-        # print "NO NIGHT YET\n"
+        # print("NO NIGHT YET\n")
         return False
 
 
@@ -174,7 +206,7 @@ def getCDSChart(lat, lon):
                             for site in sites_in_bin:
                                 nearby_cdsc.append(site)
         except:
-            print "err"
+            print("err")
 
         #Initialize vars
         closest_dist = 3 #in degrees, cant be more than 2.828, or (2 * sqrt(2))
@@ -192,7 +224,8 @@ def getCDSChart(lat, lon):
                 # TODO: Mathematically, the site with the shortest distance using lat/lon
                 # as if it were on a plane may not have shortest actual distance
                 # on a sphere. Worth calculating trade off of accuracy v. runtime
-                # but it is anticipated that loss of accuracy is minmal
+                # but it is anticipated that loss of accuracy is minmal for distances
+                # under 100km
                 dist_km = latlonDistanceInKm(lat, lon, site_lat, site_lon)
 
         # grab site url and return site data if within 100km
@@ -306,7 +339,7 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
     lat_starsite = str(lat_starsite)
     lon_starsite = str(lon_starsite)
 
-    morning_stagazing_ends_unix, night_stagazing_begins_unix = getDarknessTimes(lat_starsite, lon_starsite)
+    morning_stagazing_ends_unix, night_stagazing_begins_unix = getDarknessTimes(lat_starsite, lon_starsite, time)
 
     curr_time = getCurrentUnixTime()
 
@@ -316,7 +349,7 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
     # If it is not dark at 'time', then set time to once it gets dark
     if not isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, time):
         time = night_stagazing_begins_unix
-        #TODO User-facing message that time was changed to ___
+        #TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
 
     weatherData = getWeatherAtTime(lat_starsite, lon_starsite, time)
 
@@ -353,7 +386,10 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
 @app.route("/test")
 def test():
     # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, no time param
-    result = getStargazeReport(37.7360512,-122.4997348, 38.116947, -122.925357)
-    print "********** SF TEST **********"
-    print result
+    result = getStargazeReport(37.7360512,-122.4997348, 38.116947, -122.925357, 1547800965)
+    print("********** SF TEST **********")
+    print(result)
     return result
+
+if __name__ == "__main__":
+    test()
