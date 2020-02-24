@@ -195,9 +195,10 @@ def getCDSChart(lat, lon):
         data = json.load(f)
         nearby_cdsc = []
         #get list of all sites within same or adjacent 1 degree lat/lon bin
+        
         try:
-            for x in xrange(-1,2):
-                for y in xrange(-1,2):
+            for x in range(-1,2):
+                for y in range(-1,2):
                     lat_str = str(int(lat)+x)
                     lon_str = str(int(lon)+y)
                     if lat_str in data:
@@ -206,7 +207,7 @@ def getCDSChart(lat, lon):
                             for site in sites_in_bin:
                                 nearby_cdsc.append(site)
         except:
-            print("err")
+            print("CDSChart Error")
 
         #Initialize vars
         closest_dist = 3 #in degrees, cant be more than 2.828, or (2 * sqrt(2))
