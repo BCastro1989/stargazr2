@@ -17,7 +17,6 @@ app = Flask(__name__)
 # P1: [✓] URL for img of nearest CLEAR SKY Chart, none if > 100 miles, display distance to site + name?
 # P2: [✓] Allow user to specify what time to check?
 # P3: [ ] TIME of Next ISS overpass + visibility, az/alt
-# P4: [ ] TIME of Iridium Flares + visibility (1st gen Iridiums are gone?) - Not worth it but link until last deorbist?
 # P4: [ ] Any planets visible, where (specific + rough locations - i.e. az/art and general direction and height)
 # P4: [ ] Key Meisser Objects, and other popular deep sky objects
 
