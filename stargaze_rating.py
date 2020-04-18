@@ -25,7 +25,7 @@ def getCurrentUnixTime():
     """Get current time in UNIX format.
 
     args: none
-    returns: String of 10-digit Unix Time (integer seconds)
+    returns: Integer of 10-digit Unix Time (integer seconds)
     """
     return int(t.time())
 
@@ -62,19 +62,15 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     # TODO: Currently only returns darkness times for today, must work for next 48 hours
     # API accepts date paramter but in YYYY-MM-DD format, not unix time
     sunset_url = "https://api.sunrise-sunset.org/json?lat="+lat_selected+"&lng="+lon_selected+"&formatted=0"+strtime
-    print(sunset_url)
-
     request = requests.get(sunset_url)
     sunset_data = request.json()
-
-    print(sunset_data)
 
     # TODO: These times may be meaningless above/below (An)arctic Circle.
     # Check what API results are for arctic locations at different times of year
     # If Midnight Sun, tell user no stargazing possible :(
     # If Polar Night, they can stargaze whenever they want! :)
 
-    # TODO: I just found out the times here dont account for Daylight Savings.
+    # TODO: I just found out the times here dont explicitly account for Daylight Savings.
     # This may or may not be an issue...
 
     # start of astronomical twilight is good enough to begin stargazing
@@ -88,8 +84,8 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     morning_stagazing_ends_unix = int((morning_stagazing_ends - dt(1970, 1, 1)).total_seconds())
     night_stagazing_begins_unix = int((night_stagazing_begins - dt(1970, 1, 1)).total_seconds())
 
-    print(morning_stagazing_ends_unix)
-    print(night_stagazing_begins_unix)
+    # print("sg Start @:",morning_stagazing_ends_unix)
+    # print("sg end   @:",night_stagazing_begins_unix)
 
     return (morning_stagazing_ends_unix, night_stagazing_begins_unix)
 
@@ -194,7 +190,6 @@ def getCDSChart(lat, lon):
         data = json.load(f)
         nearby_cdsc = []
         #get list of all sites within same or adjacent 1 degree lat/lon bin
-        
         try:
             for x in range(-1,2):
                 for y in range(-1,2):
@@ -247,6 +242,7 @@ def getLocationData(lat_origin, lon_origin, lat_selected, lon_selected):
     dist_url = "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins="+lat_origin+","+lon_origin+"&destinations="+lat_selected+","+lon_selected+"&key="+maps_api_key
     elevation_url = "https://maps.googleapis.com/maps/api/elevation/json?locations="+lat_selected+","+lon_selected+"&key="+maps_api_key
 
+    # TO DO: Both GMaps API calls VERY slow... why?
     dist_request = requests.get(dist_url)
     elev_request = requests.get(elevation_url)
 
@@ -316,12 +312,10 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
     #Find overall site quality using weighted average
     site_quality_rating = ((((precip_quality * lightpol_quality * cloud_quality)*8) + (humid_quality*2))/10)*100
 
-    # debug.ppSiteRatingBreakdown(precipProbability, humidity, cloudCover, lightPol, precip_quality, humid_quality, cloud_quality, lightpol_quality, site_quality_rating)
     return site_quality_rating
 
 
 #TODO: CleanUp/Refactor
-#TODO: What functions/API calls are taking most time? Speed ups?
 @app.route("/stargazr")
 def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
     """get stargazing report based on given coordinates.
@@ -386,10 +380,22 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
 @app.route("/test")
 def test():
     # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, no time param
-    result = getStargazeReport(37.7360512,-122.4997348, 38.116947, -122.925357, 1547800965)
-    print("********** SF TEST **********")
-    print(result)
-    return result
+    result = getStargazeReport(37.7360512,-122.4997348, 38.116947, -122.925357, ) # 1547800965 ????<<<<<<<<<<<<<<<
+    print("********** SF-Pt. Reyes TEST w/o time **********")
+    print(result,"\n")
+
+    # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, time is in 24 hr
+    time = getCurrentUnixTime()
+    result = getStargazeReport(37.7360512,-122.4997348, 38.116947, -122.925357, time+86000)
+    print("********** SF-Pt. Reyes w/ time **********")
+    print(result,"\n")
+
+    # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 36 hr
+    time = getCurrentUnixTime() + 86000
+    result = getStargazeReport(37.7360512,-122.4997348, 39.580110, -122.524105, time+129000)
+    print("********** SF-Stony Gorge w/ time **********")
+    print(result,"\n")
+    return
 
 if __name__ == "__main__":
     test()
