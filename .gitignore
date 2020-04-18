@@ -2,6 +2,4 @@ dontcommit/
 ignore/
 starg/
 *.pyc
-csc_good.txt
-csc_out2.txt
-closest_csc.py
+api_runtime_test.py
