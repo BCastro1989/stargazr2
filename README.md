@@ -11,5 +11,6 @@ See related API for Clear Sky Charts: https://github.com/BGCastro89/nearest_csc
 Links for the original version of Stargazr are below:
 
 https://github.com/BGCastro89/stargazr
+
 https://github.com/BGCastro89/stargazr_front.github.io
 
