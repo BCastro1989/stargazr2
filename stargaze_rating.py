@@ -12,13 +12,17 @@ from flask import Flask
 
 app = Flask(__name__)
 
-# Things this API could use
+# Features this API could use
 # P0: [✓] No stargazing reports during the day
 # P1: [✓] URL for img of nearest CLEAR SKY Chart, none if > 100 miles, display distance to site + name?
-# P2: [✓] Allow user to specify what time to check?
+# P2: [✓] Allow user to specify what time to check
 # P3: [ ] TIME of Next ISS overpass + visibility, az/alt
 # P4: [ ] Any planets visible, where (specific + rough locations - i.e. az/art and general direction and height)
 # P4: [ ] Key Meisser Objects, and other popular deep sky objects
+
+# Improvements to Code Quality/Standards
+# [ ] Hide API keys
+# [ ] Populate params var, don't build a String
 
 
 def getCurrentUnixTime():
@@ -55,14 +59,17 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     args: String representing lat/lon coords
     returns: Int of 10-digit Unix Time (integer seconds)
     """
-    strtime = ""
-    if time:
-        strtime = "&date="+str(convertUnixToYMDFormat(time))
+    params = {
+        "lat": lat_selected,
+        "lng": lon_selected,
+        "formatted": 0,
+        "date": str(convertUnixToYMDFormat(time)) if time else "",
+    }
 
     # TODO: Currently only returns darkness times for today, must work for next 48 hours
     # API accepts date paramter but in YYYY-MM-DD format, not unix time
-    sunset_url = "https://api.sunrise-sunset.org/json?lat="+lat_selected+"&lng="+lon_selected+"&formatted=0"+strtime
-    request = requests.get(sunset_url)
+    sunset_url = "https://api.sunrise-sunset.org/json"
+    request = requests.get(sunset_url, params=params)
     sunset_data = request.json()
 
     # TODO: These times may be meaningless above/below (An)arctic Circle.
@@ -119,6 +126,9 @@ def getWeatherAPI(lat_selected, lon_selected, time):
     args: lat/lon and time for stargazing site
     returns: weather api response in json format
     """
+    # ToDO: Reformat as
+    # darksky_url = "https://api.darksky.net/forecast/%s/%.4f,%.4f" %(key, lat_selected, lon_selected)
+
     darksky_url = "https://api.darksky.net/forecast/efc5a8359eb2564994acd4ec24971d4c/"+lat_selected+","+lon_selected+","+str(time)
     request = requests.get(darksky_url)
     return request.json()
@@ -239,12 +249,23 @@ def getLocationData(lat_origin, lon_origin, lat_selected, lon_selected):
     """
     maps_api_key = "AIzaSyAPV8hWJYamUd7TCnC6h6YcljuXnFW1lp8"
 
-    dist_url = "https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins="+lat_origin+","+lon_origin+"&destinations="+lat_selected+","+lon_selected+"&key="+maps_api_key
-    elevation_url = "https://maps.googleapis.com/maps/api/elevation/json?locations="+lat_selected+","+lon_selected+"&key="+maps_api_key
+    dist_params ={
+        "units": "imperial", # use metric outside USA?
+        "origins": lat_origin+","+lon_origin,
+        "destinations": lat_selected+","+lon_selected,
+        "key": maps_api_key
+    }
+    elev_params ={
+        "locations": lat_origin+","+lon_origin,
+        "key": maps_api_key
+    }
+
+    dist_url = "https://maps.googleapis.com/maps/api/distancematrix/json"
+    elev_url = "https://maps.googleapis.com/maps/api/elevation/json"
 
     # TO DO: Both GMaps API calls VERY slow... why?
-    dist_request = requests.get(dist_url)
-    elev_request = requests.get(elevation_url)
+    dist_request = requests.get(dist_url, params=dist_params)
+    elev_request = requests.get(elev_url, params=elev_params)
 
     dist_data = dist_request.json()
     elev_data = elev_request.json()
