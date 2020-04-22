@@ -126,10 +126,9 @@ def getWeatherAPI(lat_selected, lon_selected, time):
     args: lat/lon and time for stargazing site
     returns: weather api response in json format
     """
-    # ToDO: Reformat as
-    # darksky_url = "https://api.darksky.net/forecast/%s/%.4f,%.4f" %(key, lat_selected, lon_selected)
+    key = 'efc5a8359eb2564994acd4ec24971d4c' #TODO: Change and hide key
+    darksky_url = "https://api.darksky.net/forecast/%s/%.4f,%.4f,%d" %(key, lat_selected, lon_selected, time)
 
-    darksky_url = "https://api.darksky.net/forecast/efc5a8359eb2564994acd4ec24971d4c/"+lat_selected+","+lon_selected+","+str(time)
     request = requests.get(darksky_url)
     return request.json()
 
@@ -251,12 +250,12 @@ def getLocationData(lat_origin, lon_origin, lat_selected, lon_selected):
 
     dist_params ={
         "units": "imperial", # use metric outside USA?
-        "origins": lat_origin+","+lon_origin,
-        "destinations": lat_selected+","+lon_selected,
+        "origins": str(lat_origin)+","+str(lon_origin),
+        "destinations": str(lat_selected)+","+str(lon_selected),
         "key": maps_api_key
     }
     elev_params ={
-        "locations": lat_origin+","+lon_origin,
+        "locations": str(lat_origin)+","+str(lon_origin),
         "key": maps_api_key
     }
 
@@ -348,12 +347,6 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
 
     returns: dictionary with data needed for API response/display in front end
     """
-    #TODO: More consitency with use as str v float. Avoid unnessecary type conversion
-    lat_org = str(lat_org)
-    lon_org = str(lon_org)
-    lat_starsite = str(lat_starsite)
-    lon_starsite = str(lon_starsite)
-
     morning_stagazing_ends_unix, night_stagazing_begins_unix = getDarknessTimes(lat_starsite, lon_starsite, time)
 
     curr_time = getCurrentUnixTime()
