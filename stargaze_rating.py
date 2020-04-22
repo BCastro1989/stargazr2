@@ -1,7 +1,5 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
-from config import DARKSKY_API_KEY
-from config import G_MAPS_API_KEY
 from datetime import datetime as dt
 from flask import Flask
 from light_pollution import getLightPollution
@@ -9,12 +7,15 @@ from light_pollution import getLightPollution
 import debug
 import json
 import math
+import os
 import pprint
 import requests
 import time as t
 
 
 app = Flask(__name__)
+DARKSKY_API_KEY = os.environ.get('DARKSKY_API_KEY', '')
+G_MAPS_API_KEY = os.environ.get('G_MAPS_API_KEY', '')
 
 # Features this API could use
 # P0: [✓] No stargazing reports during the day
