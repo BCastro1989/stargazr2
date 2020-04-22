@@ -1,5 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
+from config import DARKSKY_API_KEY
+from config import G_MAPS_API_KEY
 from datetime import datetime as dt
 from flask import Flask
 from light_pollution import getLightPollution
@@ -23,9 +25,8 @@ app = Flask(__name__)
 # P4: [ ] Key Meisser Objects, and other popular deep sky objects
 
 # Improvements to Code Quality/Standards
-# [ ] Hide API keys
-# [ ] Populate params var, don't build a String
-
+# [ ] Lint/Check for PEP-8
+# [ ] Isolate API calls in seperate functions
 
 def getCurrentUnixTime():
     """Get current time in UNIX format.
@@ -128,8 +129,7 @@ def getWeatherAPI(lat_selected, lon_selected, time):
     args: lat/lon and time for stargazing site
     returns: weather api response in json format
     """
-    key = 'efc5a8359eb2564994acd4ec24971d4c' #TODO: Change and hide key
-    darksky_url = "https://api.darksky.net/forecast/%s/%.4f,%.4f,%d" %(key, lat_selected, lon_selected, time)
+    darksky_url = "https://api.darksky.net/forecast/%s/%.4f,%.4f,%d" %(DARKSKY_API_KEY, lat_selected, lon_selected, time)
 
     request = requests.get(darksky_url)
     return request.json()
@@ -248,17 +248,15 @@ def getLocationData(lat_origin, lon_origin, lat_selected, lon_selected):
     args: lat/lon for origin and stargazing site selcted
     returns: dictionary with elevation, distance in time and space, simple units and human readable
     """
-    maps_api_key = "AIzaSyAPV8hWJYamUd7TCnC6h6YcljuXnFW1lp8"
-
     dist_params ={
         "units": "imperial", # use metric outside USA?
         "origins": str(lat_origin)+","+str(lon_origin),
         "destinations": str(lat_selected)+","+str(lon_selected),
-        "key": maps_api_key
+        "key": G_MAPS_API_KEY
     }
     elev_params ={
         "locations": str(lat_origin)+","+str(lon_origin),
-        "key": maps_api_key
+        "key": G_MAPS_API_KEY
     }
 
     dist_url = "https://maps.googleapis.com/maps/api/distancematrix/json"

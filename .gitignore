@@ -2,4 +2,5 @@ dontcommit/
 ignore/
 starg/
 *.pyc
+config.py
 api_runtime_test.py
