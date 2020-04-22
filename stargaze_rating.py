@@ -1,14 +1,16 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
-import requests
-import math
-import pprint
 from datetime import datetime as dt
-import time as t
+from flask import Flask
 from light_pollution import getLightPollution
+
 import debug
 import json
-from flask import Flask
+import math
+import pprint
+import requests
+import time as t
+
 
 app = Flask(__name__)
 
