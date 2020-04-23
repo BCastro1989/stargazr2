@@ -29,6 +29,36 @@ G_MAPS_API_KEY = os.environ.get('G_MAPS_API_KEY', '')
 # [ ] Lint/Check for PEP-8
 # [ ] Isolate API calls in seperate functions
 
+# ToDo Tweaks/Optomize
+# [ ] getDarknessTimes
+    # P1: [ ] TODO: Currently only returns darkness times for today, must work for next 48 hours
+        # API accepts date paramter but in YYYY-MM-DD format, not unix time
+    # P2: [ ] TODO: These times may be meaningless above/below (An)arctic Circle.
+        # Check what API results are for arctic locations at different times of year
+        # If Midnight Sun, tell user no stargazing possible :(
+        # If Polar Night, they can stargaze whenever they want! :)
+    # P1: [ ] TODO: I just found out the times here dont explicitly account for Daylight Savings.
+        # This may or may not be an issue...
+# [ ] getWeatherAtTime
+    # P3: [ ] TODO: ONLY get data we need from API requests? Would be faster but requires
+        # a lot more params in url request used. Probably worth it in the long run
+    # P1: [ ] TODO The response from weatherdata is slightly different if looking at future weather report!
+        # Test responses at various future times, verify that below keys still exist and get correct values
+# [ ] getCDSChart
+    # P3 TODO: Mathematically, the site with the shortest distance using lat/lon
+        # as if it were on a plane may not have shortest actual distance
+        # on a sphere. Worth calculating trade off of accuracy v. runtime
+        # but it is anticipated that loss of accuracy is minmal for distances
+        # under 100km
+# [ ] getLocationData
+    # P2 [ ] TODO: Distance and elevation calls should probably be two methods
+    # P0 [ ] TODO: Both GMaps API calls VERY slow... why?
+# [ ] calculateRating
+    # P3 [ ] TODO Equation for calulcating the rating needs some work.
+# [ ] getStargazeReport
+    # P3 [ ] TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
+
+
 def getCurrentUnixTime():
     """Get current time in UNIX format.
 
@@ -56,6 +86,7 @@ def convertYMDHStoUnixFormat(timestamp):
     returns: int representing unix time
     """
     pass
+
 
 def getDarknessTimes(lat_selected, lon_selected, time):
     """Get times of day's darkness start/stop as unix time
@@ -175,7 +206,7 @@ def latlonDistanceInKm(lat1, lon1, lat2, lon2):
     args: lat/lon for two points on Earth
     returns: Float representing distance in kilometres
     """
-    R = 6371 #Earth Radius in kilometres (assume perfect sphere)
+    R = 6371 # Earth Radius in kilometres (assume perfect sphere)
 
     phi1 = math.radians(lat1)
     phi2 = math.radians(lat2)
@@ -186,7 +217,8 @@ def latlonDistanceInKm(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     d = R * c
 
-    return round(d,1) #Assume Accurate within ~0.1km due to Idealized Sphere Earth
+    # Assume Accurate within ~0.1km due to Idealized Sphere Earth
+    return round(d,1)
 
 def getCDSChart(lat, lon):
     """Nearest Clear Dark Sky Chart from A. Danko's site
