@@ -50,35 +50,31 @@ def get_lat_lng_tile(lat, lng, zoom):
     return (x, y)
 
 pixel_lightpoll_table = {
-    "(0, 0, 0)": 0.005,               #"0.00 - 0.01",
-    "(35, 35, 35)": 0.035,            #"0.01 - 0.06",
-    "(70, 70, 70)": 0.085,            #"0.06 - 0.11",
-    "(0, 0, 153)": 0.15,            #"0.11 - 0.19",
-    "(0, 0, 255)": 0.26,            #"0.19 - 0.33",
-    "(0, 153, 0)": 0.455,           #"0.33 - 0.58",
-    "(0, 255, 0)": 0.79,          #"0.58 - 1.00",
-    "(191, 191, 0)": 1.365,          #"1.00 - 1.73",
-    "(255, 255, 0)": 2.365,          #"1.73 - 3.00",
-    "(217, 109, 0)": 4.1,           #"3.00 - 5.20",
-    "(255, 128, 0)": 7.1,          #"5.20 - 9.00",
-    "(204, 0, 0)": 12.295,           #"9.00 - 15.59",
-    "(255, 0, 0)": 21.295,           #"15.59 - 27.00",
-    "(191, 191, 191)": 36.895,         #"27.0 - 46.77",
-    "(255, 255, 255)": 46.77        #"46.77+"
+    "(0, 0, 0)": 0.005,         # Bortle "0.00 - 0.01",
+    "(35, 35, 35)": 0.035,      # Bortle "0.01 - 0.06",
+    "(70, 70, 70)": 0.085,      # Bortle "0.06 - 0.11",
+    "(0, 0, 153)": 0.15,        # Bortle "0.11 - 0.19",
+    "(0, 0, 255)": 0.26,        # Bortle "0.19 - 0.33",
+    "(0, 153, 0)": 0.455,       # Bortle "0.33 - 0.58",
+    "(0, 255, 0)": 0.79,        # Bortle "0.58 - 1.00",
+    "(191, 191, 0)": 1.365,     # Bortle "1.00 - 1.73",
+    "(255, 255, 0)": 2.365,     # Bortle "1.73 - 3.00",
+    "(217, 109, 0)": 4.1,       # Bortle "3.00 - 5.20",
+    "(255, 128, 0)": 7.1,       # Bortle "5.20 - 9.00",
+    "(204, 0, 0)": 12.295,      # Bortle "9.00 - 15.59",
+    "(255, 0, 0)": 21.295,      # Bortle "15.59 - 27.00",
+    "(191, 191, 191)": 36.895,  # Bortle "27.0 - 46.77",
+    "(255, 255, 255)": 46.77    # Bortle "46.77+"
 }
 
-
-
-def getLightPollution(lat,lon):#request):
+def getLightPollution(lat,lon):
     """Gets the Light Pollution level for the location chosen.
 
     args: lat/lon for stargazing site
     returns: Double representation of light pollution levels
     """
     curr_dir_path = os.path.dirname(os.path.realpath(__file__))
-    tiles_dir_path = os.path.join(curr_dir_path, 'tiles')
-    # lat = float(request.GET['lat'])
-    # lon = float(request.GET['lng'])
+    tiles_dir_path = os.path.join(curr_dir_path, 'lp_tiles')
 
     bin_lat = 0
     bin_lon = 0
