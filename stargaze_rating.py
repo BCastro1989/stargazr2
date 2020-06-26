@@ -12,10 +12,10 @@ import pprint
 import requests
 import time as t
 
-
 app = Flask(__name__)
 DARKSKY_API_KEY = os.environ.get('DARKSKY_API_KEY', '')
 G_MAPS_API_KEY = os.environ.get('G_MAPS_API_KEY', '')
+CSC_DATA_PATH = 'csc_data/csc_sites2.json'
 
 # Features this API could use
 # P0: [✓] No stargazing reports during the day
@@ -75,17 +75,6 @@ def convertUnixToYMDFormat(unixtime):
     returns: String representing time in YYYY-MM-DD
     """
     return dt.utcfromtimestamp(unixtime).strftime("%Y-%m-%d")
-
-
-def convertYMDHStoUnixFormat(timestamp):
-    """Convert time to Human Readable YYYY-MM-DD from unix epoch
-
-    How deal with timezones????
-
-    args: String representing time in YYYY-MM-DD
-    returns: int representing unix time
-    """
-    pass
 
 
 def getDarknessTimes(lat_selected, lon_selected, time):
@@ -161,13 +150,16 @@ def getWeatherAPI(lat_selected, lon_selected, time):
     args: lat/lon and time for stargazing site
     returns: weather api response in json format
     """
+    if not DARKSKY_API_KEY:
+        raise Exception("Missing API Key for DarkSky")
+    
     darksky_url = "https://api.darksky.net/forecast/%s/%.4f,%.4f,%d" %(DARKSKY_API_KEY, lat_selected, lon_selected, time)
 
     request = requests.get(darksky_url)
     return request.json()
 
 
-def getWeatherAtTime(lat_selected, lon_selected, time):
+def getWeatherAtTime(lat_selected, lon_selected, time=None):
     """Gets Weather report for location and time specified.
 
     args: lat/lon and time for stargazing site
@@ -230,7 +222,7 @@ def getCDSChart(lat, lon):
         no sites within 100km, return None
     """
     # get list of all csc site locations
-    with open('csc_sites2.json', 'r') as f:
+    with open(CSC_DATA_PATH, 'r') as f:
         data = json.load(f)
         nearby_cdsc = []
         #get list of all sites within same or adjacent 1 degree lat/lon bin
@@ -281,6 +273,10 @@ def getLocationData(lat_origin, lon_origin, lat_selected, lon_selected):
     args: lat/lon for origin and stargazing site selcted
     returns: dictionary with elevation, distance in time and space, simple units and human readable
     """
+
+    if not G_MAPS_API_KEY:
+        raise Exception("Missing API Key for Google Maps")
+
     dist_params ={
         "units": "imperial", # use metric outside USA?
         "origins": str(lat_origin)+","+str(lon_origin),
@@ -427,7 +423,7 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
 @app.route("/test")
 def test():
     # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, no time param
-    result = getStargazeReport(37.7360512,-122.4997348, 38.116947, -122.925357, ) # 1547800965 ????<<<<<<<<<<<<<<<
+    result = getStargazeReport(37.7360512,-122.4997348, 38.116947, -122.925357)
     print("********** SF-Pt. Reyes TEST w/o time **********")
     print(result,"\n")
 
