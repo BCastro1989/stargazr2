@@ -15,7 +15,10 @@ import time as t
 app = Flask(__name__)
 DARKSKY_API_KEY = os.environ.get('DARKSKY_API_KEY', '')
 G_MAPS_API_KEY = os.environ.get('G_MAPS_API_KEY', '')
-CSC_DATA_PATH = 'csc_data/csc_sites2.json'
+
+PATH = "csc_data"
+FILENAME = "csc_sites.json"
+MAX_DIST_KM = 100
 
 # Features this API could use
 # P0: [✓] No stargazing reports during the day
@@ -54,7 +57,7 @@ CSC_DATA_PATH = 'csc_data/csc_sites2.json'
     # P2 [ ] TODO: Distance and elevation calls should probably be two methods
     # P0 [ ] TODO: Both GMaps API calls VERY slow... why?
 # [ ] calculateRating
-    # P3 [ ] TODO Equation for calulcating the rating needs some work.
+    # P4 [ ] TODO Equation for calulcating the rating needs some work.
 # [ ] getStargazeReport
     # P3 [ ] TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
 
@@ -222,9 +225,9 @@ def getCDSChart(lat, lon):
         no sites within 100km, return None
     """
     # get list of all csc site locations
-    with open(CSC_DATA_PATH, 'r') as f:
+    with open(os.path.join(PATH, FILENAME), 'r') as f:
         data = json.load(f)
-        nearby_cdsc = []
+        nearby_charts = []
         #get list of all sites within same or adjacent 1 degree lat/lon bin
         try:
             for x in range(-1,2):
@@ -235,33 +238,24 @@ def getCDSChart(lat, lon):
                         if lon_str in data[lat_str]:
                             sites_in_bin = data[lat_str][lon_str]
                             for site in sites_in_bin:
-                                nearby_cdsc.append(site)
+                                nearby_charts.append(site)
         except:
             print("CDSChart Error")
 
-        #Initialize vars
-        closest_dist = 3 #in degrees, cant be more than 2.828, or (2 * sqrt(2))
         closest_site = {}
-        dist_km = 100
+        curr_closest_km = MAX_DIST_KM
 
-        #Find the closest site in CDSC database within bins
-        for site in nearby_cdsc:
-            site_lat = site["lat"]
-            site_lon = site["lon"]
-            dist = math.sqrt( (site_lat-lat)**2 + (site_lon-lon)**2 )
-            if dist < closest_dist:
-                closest_dist = dist
+        # Find the closest site in Clear Dark Sky database within bins
+        for site in nearby_charts:
+            dist = latlonDistanceInKm(lat, lon, site["lat"], site["lon"])
+
+            if dist < curr_closest_km:
+                curr_closest_km = dist
                 closest_site = site
-                # TODO: Mathematically, the site with the shortest distance using lat/lon
-                # as if it were on a plane may not have shortest actual distance
-                # on a sphere. Worth calculating trade off of accuracy v. runtime
-                # but it is anticipated that loss of accuracy is minmal for distances
-                # under 100km
-                dist_km = latlonDistanceInKm(lat, lon, site_lat, site_lon)
 
         # grab site url and return site data if within 100km
-        if dist_km < 100:
-            closest_site['dist_km'] = dist_km
+        if curr_closest_km < 100:
+            closest_site['dist_km'] = curr_closest_km
             return closest_site
 
         return None
