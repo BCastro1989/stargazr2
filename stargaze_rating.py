@@ -47,12 +47,8 @@ MAX_DIST_KM = 100
         # a lot more params in url request used. Probably worth it in the long run
     # P1: [ ] TODO The response from weatherdata is slightly different if looking at future weather report!
         # Test responses at various future times, verify that below keys still exist and get correct values
-# [ ] getCDSChart
-    # P3 TODO: Mathematically, the site with the shortest distance using lat/lon
-        # as if it were on a plane may not have shortest actual distance
-        # on a sphere. Worth calculating trade off of accuracy v. runtime
-        # but it is anticipated that loss of accuracy is minmal for distances
-        # under 100km
+# [✓] getCDSChart
+    # P3 TODO: Use more accurate distance model/equation
 # [ ] getLocationData
     # P2 [ ] TODO: Distance and elevation calls should probably be two methods
     # P0 [ ] TODO: Both GMaps API calls VERY slow... why?
