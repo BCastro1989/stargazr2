@@ -3,6 +3,7 @@
 from datetime import datetime as dt
 from flask import Flask
 from light_pollution import getLightPollution
+from nearest_csc import nearest_csc
 
 import debug
 import json
@@ -191,71 +192,6 @@ def getWeatherAtTime(lat_selected, lon_selected, time=None):
     }
 
 
-def latlonDistanceInKm(lat1, lon1, lat2, lon2):
-    """Calculate distance between two lat/long points on globe in kilometres.
-
-    args: lat/lon for two points on Earth
-    returns: Float representing distance in kilometres
-    """
-    R = 6371 # Earth Radius in kilometres (assume perfect sphere)
-
-    phi1 = math.radians(lat1)
-    phi2 = math.radians(lat2)
-    d_phi = math.radians(lat2-lat1)
-    d_lambda = math.radians(lon2-lon1)
-
-    a = math.sin(d_phi/2) * math.sin(d_phi/2) + math.cos(phi1) * math.cos(phi2) * math.sin(d_lambda/2) * math.sin(d_lambda/2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-    d = R * c
-
-    # Assume Accurate within ~0.1km due to Idealized Sphere Earth
-    return round(d,1)
-
-def getCDSChart(lat, lon):
-    """Nearest Clear Dark Sky Chart from A. Danko's site
-    Finds nearest site by binning all sities by lat/lon. Only bother to find the
-    distance to sites within the same lat/lon +/- 1 degree.
-
-    args: String of lat/lon for stargazing site
-    returns: Tuple of distance to closest CDSC site, and dict of site info. If
-        no sites within 100km, return None
-    """
-    # get list of all csc site locations
-    with open(os.path.join(PATH, FILENAME), 'r') as f:
-        data = json.load(f)
-        nearby_charts = []
-        #get list of all sites within same or adjacent 1 degree lat/lon bin
-        try:
-            for x in range(-1,2):
-                for y in range(-1,2):
-                    lat_str = str(int(lat)+x)
-                    lon_str = str(int(lon)+y)
-                    if lat_str in data:
-                        if lon_str in data[lat_str]:
-                            sites_in_bin = data[lat_str][lon_str]
-                            for site in sites_in_bin:
-                                nearby_charts.append(site)
-        except:
-            print("CDSChart Error")
-
-        closest_site = {}
-        curr_closest_km = MAX_DIST_KM
-
-        # Find the closest site in Clear Dark Sky database within bins
-        for site in nearby_charts:
-            dist = latlonDistanceInKm(lat, lon, site["lat"], site["lon"])
-
-            if dist < curr_closest_km:
-                curr_closest_km = dist
-                closest_site = site
-
-        # grab site url and return site data if within 100km
-        if curr_closest_km < 100:
-            closest_site['dist_km'] = curr_closest_km
-            return closest_site
-
-        return None
-
 #TODO: Distance and elevation calls should probably be two methods
 def getLocationData(lat_origin, lon_origin, lat_selected, lon_selected):
     """Gets the elevation and distance to the given coordinates.
@@ -390,7 +326,7 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
 
     #Only get CDS chart if time is within 24 hours
     if time < curr_time + 86000:
-        cds_chart = getCDSChart(float(lat_starsite),float(lon_starsite))
+        cds_chart = nearest_csc(float(lat_starsite),float(lon_starsite))
     else:
         cds_chart = None
 
@@ -412,19 +348,24 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
 
 @app.route("/test")
 def test():
+    time = getCurrentUnixTime()
+
     # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, no time param
     result = getStargazeReport(37.7360512,-122.4997348, 38.116947, -122.925357)
     print("********** SF-Pt. Reyes TEST w/o time **********")
     print(result,"\n")
 
+    # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 12 hr
+    result = getStargazeReport(37.7360512,-122.4997348, 39.580110, -122.524105, time+43000)
+    print("********** SF-Stony Gorge w/ time **********")
+    print(result,"\n")
+
     # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, time is in 24 hr
-    time = getCurrentUnixTime()
     result = getStargazeReport(37.7360512,-122.4997348, 38.116947, -122.925357, time+86000)
     print("********** SF-Pt. Reyes w/ time **********")
     print(result,"\n")
 
     # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 36 hr
-    time = getCurrentUnixTime() + 86000
     result = getStargazeReport(37.7360512,-122.4997348, 39.580110, -122.524105, time+129000)
     print("********** SF-Stony Gorge w/ time **********")
     print(result,"\n")
