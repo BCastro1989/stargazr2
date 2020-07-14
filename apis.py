@@ -14,6 +14,8 @@ G_MAPS_API_KEY = os.environ.get('G_MAPS_API_KEY', '')
 
 SUNSET_URL = "https://api.sunrise-sunset.org/json"
 DARKSKY_URL = "https://api.darksky.net/forecast/%s/%.4f,%.4f,%d"
+GMAPS_ELEV_URL = "https://maps.googleapis.com/maps/api/elevation/json"
+GMAPS_DIST_URL = "https://maps.googleapis.com/maps/api/distancematrix/json"
 
 def dark_sky_api(lat_selected, lon_selected, time):
     """Gets Weather report for location and time specified using darksky api
@@ -37,8 +39,7 @@ def gmaps_elevation_api(lat_selected, lon_selected):
         "key": G_MAPS_API_KEY
     }
 
-    elev_url = "https://maps.googleapis.com/maps/api/elevation/json"
-    elev_request = requests.get(elev_url, params=elev_params)
+    elev_request = requests.get(GMAPS_ELEV_URL, params=elev_params)
     return elev_request.json()
 
 
@@ -53,8 +54,7 @@ def gmaps_distance_api(lat_origin, lon_origin, lat_selected, lon_selected):
         "key": G_MAPS_API_KEY
     }
 
-    dist_url = "https://maps.googleapis.com/maps/api/distancematrix/json"
-    dist_request = requests.get(dist_url, params=dist_params)
+    dist_request = requests.get(GMAPS_DIST_URL, params=dist_params)
 
     return dist_request.json()
 
