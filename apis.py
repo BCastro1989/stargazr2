@@ -31,6 +31,11 @@ def dark_sky_api(lat_selected, lon_selected, time):
 
 
 def gmaps_elevation_api(lat_selected, lon_selected):
+    """Gets the elevation at given coordinates.
+
+    args: lat/lon for stargazing site selcted
+    returns: json response with elevation data in meters
+    """
     if not G_MAPS_API_KEY:
         raise Exception("Missing API Key for Google Maps")
 
@@ -44,11 +49,16 @@ def gmaps_elevation_api(lat_selected, lon_selected):
 
 
 def gmaps_distance_api(lat_origin, lon_origin, lat_selected, lon_selected):
+    """Gets the distance between two sets of coords
+
+    args: lat/lon for origin and stargazing site selcted
+    returns: json response with driving distance (meters) and time (seconds)
+    """
+
     if not G_MAPS_API_KEY:
         raise Exception("Missing API Key for Google Maps")
 
     dist_params ={
-        "units": "imperial", # use metric outside USA?
         "origins": str(lat_origin)+","+str(lon_origin),
         "destinations": str(lat_selected)+","+str(lon_selected),
         "key": G_MAPS_API_KEY
@@ -60,6 +70,11 @@ def gmaps_distance_api(lat_origin, lon_origin, lat_selected, lon_selected):
 
     
 def sunrise_sunset_time_api(lat_selected, lon_selected, time):
+    """Gets the times the sun will rise/set, and reach "twilight" conditions sufficent for stargazing
+
+    args: lat/lon for stargazing site selcted
+    returns: json response with driving distance (meters) and time (seconds)
+    """
     params = {
         "lat": lat_selected,
         "lng": lon_selected,
@@ -74,8 +89,18 @@ def sunrise_sunset_time_api(lat_selected, lon_selected, time):
 
 
 def light_pollution_api(lat_starsite, lon_starsite):
+    """Determines Light Pollution Levels. Internal API.
+
+    args: lat/lon for stargazing site selcted
+    returns: json response with light pollution levels (additional brightness ratio)
+    """
     return getLightPollution(float(lat_starsite),float(lon_starsite))
 
 
 def nearest_csc_api(lat_starsite,lon_starsite):
+    """Gets nearest Clear Sky Chart. Internal API.
+
+    args: lat/lon for stargazing site selcted
+    returns: json response with the nearest CSC.
+    """
     return nearest_csc(float(lat_starsite),float(lon_starsite))
