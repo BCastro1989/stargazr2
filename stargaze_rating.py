@@ -3,6 +3,10 @@
 from datetime import datetime as dt
 from flask import Flask
 
+from helpers import (
+    getCurrentUnixTime
+)
+
 from apis import (
     dark_sky_api,
     gmaps_distance_api,
@@ -65,24 +69,6 @@ MAX_DIST_KM = 100
     # P4 [ ] TODO Equation for calulcating the rating needs some work.
 # [ ] getStargazeReport
     # P3 [ ] TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
-
-
-def getCurrentUnixTime():
-    """Get current time in UNIX format.
-
-    args: none
-    returns: Integer of 10-digit Unix Time (integer seconds)
-    """
-    return int(t.time())
-
-
-def convertUnixToYMDFormat(unixtime):
-    """Convert time from unix epoch to Human Readable YYYY-MM-DD
-
-    args: int representing unix time
-    returns: String representing time in YYYY-MM-DD
-    """
-    return dt.utcfromtimestamp(unixtime).strftime("%Y-%m-%d")
 
 
 def getDarknessTimes(lat_selected, lon_selected, time):
