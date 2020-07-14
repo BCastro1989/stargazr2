@@ -77,18 +77,8 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     args: String representing lat/lon coords
     returns: Int of 10-digit Unix Time (integer seconds)
     """
-    # params = {
-    #     "lat": lat_selected,
-    #     "lng": lon_selected,
-    #     "formatted": 0,
-    #     "date": str(convertUnixToYMDFormat(time)) if time else "",
-    # }
-
-    # # TODO: Currently only returns darkness times for today, must work for next 48 hours
-    # # API accepts date paramter but in YYYY-MM-DD format, not unix time
-    # sunset_url = "https://api.sunrise-sunset.org/json"
-    # request = requests.get(sunset_url, params=params)
-    # sunset_data = request.json()
+    # TODO: Currently only returns darkness times for today, must work for next 48 hours
+    # API accepts date paramter but in YYYY-MM-DD format, not unix time
     sunset_data = sunrise_sunset_time_api(lat_selected, lon_selected, time)
 
     # TODO: These times may be meaningless above/below (An)arctic Circle.
@@ -138,11 +128,6 @@ def isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_u
         # print("NO NIGHT YET\n")
         return False
 
-
-def getWeatherAPI(lat_selected, lon_selected, time):
-    pass
-
-
 def getWeatherAtTime(lat_selected, lon_selected, time=None):
     """Gets Weather report for location and time specified.
 
@@ -151,7 +136,6 @@ def getWeatherAtTime(lat_selected, lon_selected, time=None):
     """
     # TODO: ONLY get data we need from API requests? Would be faster but requires
     # a lot more params in url request used. Probably worth it in the long run
-    # weatherdata = getWeatherAPI(lat_selected, lon_selected, time)
     weatherdata = dark_sky_api(lat_selected, lon_selected, time)
 
     # debug.testDSAPI(weatherdata)
@@ -184,30 +168,6 @@ def getLocationData(lat_origin, lon_origin, lat_selected, lon_selected):
     args: lat/lon for origin and stargazing site selcted
     returns: dictionary with elevation, distance in time and space, simple units and human readable
     """
-
-    # if not G_MAPS_API_KEY:
-    #     raise Exception("Missing API Key for Google Maps")
-
-    # dist_params ={
-    #     "units": "imperial", # use metric outside USA?
-    #     "origins": str(lat_origin)+","+str(lon_origin),
-    #     "destinations": str(lat_selected)+","+str(lon_selected),
-    #     "key": G_MAPS_API_KEY
-    # }
-    # elev_params ={
-    #     "locations": str(lat_origin)+","+str(lon_origin),
-    #     "key": G_MAPS_API_KEY
-    # }
-
-    # dist_url = "https://maps.googleapis.com/maps/api/distancematrix/json"
-    # elev_url = "https://maps.googleapis.com/maps/api/elevation/json"
-
-    # # TO DO: Both GMaps API calls VERY slow... why?
-    # dist_request = requests.get(dist_url, params=dist_params)
-    # elev_request = requests.get(elev_url, params=elev_params)
-
-    # dist_data = dist_request.json()
-    # elev_data = elev_request.json()
 
     dist_data = gmaps_distance_api(lat_origin, lon_origin, lat_selected, lon_selected)
     elev_data = gmaps_elevation_api(lat_selected, lon_selected)
