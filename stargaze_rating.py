@@ -42,7 +42,7 @@ MAX_DIST_KM = 100
 
 # Improvements to Code Quality/Standards
 # [ ] Lint/Check for PEP-8
-# [ ] Isolate API calls in seperate functions
+# [✓] Isolate API calls in seperate functions
 # [ ] Have 3 API endpoints: Stargazing, Driving Distance, CSC (Later: ISS, Planets, Meisser, etc)
 
 # ToDo Tweaks/Optomize
@@ -62,9 +62,9 @@ MAX_DIST_KM = 100
         # Test responses at various future times, verify that below keys still exist and get correct values
 # [✓] getCDSChart
     # P3 TODO: Use more accurate distance model/equation
-# [ ] getLocationData
-    # P2 [ ] TODO: Distance and elevation calls should probably be two methods
-    # P0 [ ] TODO: Both GMaps API calls VERY slow... why?
+# [✓] getLocationData
+    # P2 [✓] TODO: Distance and elevation calls should probably be two methods
+    # P0 [✓?] TODO: Both GMaps API calls VERY slow... why?
 # [ ] calculateRating
     # P4 [ ] TODO Equation for calulcating the rating needs some work.
 # [ ] getStargazeReport
