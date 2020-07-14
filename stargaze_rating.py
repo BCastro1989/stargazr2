@@ -2,7 +2,19 @@
 # -*- coding: UTF-8 -*-
 from datetime import datetime as dt
 from flask import Flask
-from light_pollution import getLightPollution
+
+from helpers import (
+    getCurrentUnixTime
+)
+
+from apis import (
+    dark_sky_api,
+    gmaps_distance_api,
+    gmaps_elevation_api,
+    sunrise_sunset_time_api,
+    light_pollution_api,
+    nearest_csc_api
+    )
 
 import debug
 import json
@@ -30,7 +42,8 @@ MAX_DIST_KM = 100
 
 # Improvements to Code Quality/Standards
 # [ ] Lint/Check for PEP-8
-# [ ] Isolate API calls in seperate functions
+# [✓] Isolate API calls in seperate functions
+# [ ] Have 3 API endpoints: Stargazing, Driving Distance, CSC (Later: ISS, Planets, Meisser, etc)
 
 # ToDo Tweaks/Optomize
 # [ ] getDarknessTimes
@@ -49,31 +62,13 @@ MAX_DIST_KM = 100
         # Test responses at various future times, verify that below keys still exist and get correct values
 # [✓] getCDSChart
     # P3 TODO: Use more accurate distance model/equation
-# [ ] getLocationData
-    # P2 [ ] TODO: Distance and elevation calls should probably be two methods
-    # P0 [ ] TODO: Both GMaps API calls VERY slow... why?
+# [✓] getLocationData
+    # P2 [✓] TODO: Distance and elevation calls should probably be two methods
+    # P0 [✓?] TODO: Both GMaps API calls VERY slow... why?
 # [ ] calculateRating
     # P4 [ ] TODO Equation for calulcating the rating needs some work.
 # [ ] getStargazeReport
     # P3 [ ] TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
-
-
-def getCurrentUnixTime():
-    """Get current time in UNIX format.
-
-    args: none
-    returns: Integer of 10-digit Unix Time (integer seconds)
-    """
-    return int(t.time())
-
-
-def convertUnixToYMDFormat(unixtime):
-    """Convert time from unix epoch to Human Readable YYYY-MM-DD
-
-    args: int representing unix time
-    returns: String representing time in YYYY-MM-DD
-    """
-    return dt.utcfromtimestamp(unixtime).strftime("%Y-%m-%d")
 
 
 def getDarknessTimes(lat_selected, lon_selected, time):
@@ -82,18 +77,9 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     args: String representing lat/lon coords
     returns: Int of 10-digit Unix Time (integer seconds)
     """
-    params = {
-        "lat": lat_selected,
-        "lng": lon_selected,
-        "formatted": 0,
-        "date": str(convertUnixToYMDFormat(time)) if time else "",
-    }
-
     # TODO: Currently only returns darkness times for today, must work for next 48 hours
     # API accepts date paramter but in YYYY-MM-DD format, not unix time
-    sunset_url = "https://api.sunrise-sunset.org/json"
-    request = requests.get(sunset_url, params=params)
-    sunset_data = request.json()
+    sunset_data = sunrise_sunset_time_api(lat_selected, lon_selected, time)
 
     # TODO: These times may be meaningless above/below (An)arctic Circle.
     # Check what API results are for arctic locations at different times of year
@@ -142,22 +128,6 @@ def isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_u
         # print("NO NIGHT YET\n")
         return False
 
-
-def getWeatherAPI(lat_selected, lon_selected, time):
-    """Gets Weather report for location and time specified using darksky api
-
-    args: lat/lon and time for stargazing site
-    returns: weather api response in json format
-    """
-    if not DARKSKY_API_KEY:
-        raise Exception("Missing API Key for DarkSky")
-    
-    darksky_url = "https://api.darksky.net/forecast/%s/%.4f,%.4f,%d" %(DARKSKY_API_KEY, lat_selected, lon_selected, time)
-
-    request = requests.get(darksky_url)
-    return request.json()
-
-
 def getWeatherAtTime(lat_selected, lon_selected, time=None):
     """Gets Weather report for location and time specified.
 
@@ -166,7 +136,7 @@ def getWeatherAtTime(lat_selected, lon_selected, time=None):
     """
     # TODO: ONLY get data we need from API requests? Would be faster but requires
     # a lot more params in url request used. Probably worth it in the long run
-    weatherdata = getWeatherAPI(lat_selected, lon_selected, time)
+    weatherdata = dark_sky_api(lat_selected, lon_selected, time)
 
     # debug.testDSAPI(weatherdata)
 
@@ -191,71 +161,6 @@ def getWeatherAtTime(lat_selected, lon_selected, time=None):
     }
 
 
-def latlonDistanceInKm(lat1, lon1, lat2, lon2):
-    """Calculate distance between two lat/long points on globe in kilometres.
-
-    args: lat/lon for two points on Earth
-    returns: Float representing distance in kilometres
-    """
-    R = 6371 # Earth Radius in kilometres (assume perfect sphere)
-
-    phi1 = math.radians(lat1)
-    phi2 = math.radians(lat2)
-    d_phi = math.radians(lat2-lat1)
-    d_lambda = math.radians(lon2-lon1)
-
-    a = math.sin(d_phi/2) * math.sin(d_phi/2) + math.cos(phi1) * math.cos(phi2) * math.sin(d_lambda/2) * math.sin(d_lambda/2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-    d = R * c
-
-    # Assume Accurate within ~0.1km due to Idealized Sphere Earth
-    return round(d,1)
-
-def getCDSChart(lat, lon):
-    """Nearest Clear Dark Sky Chart from A. Danko's site
-    Finds nearest site by binning all sities by lat/lon. Only bother to find the
-    distance to sites within the same lat/lon +/- 1 degree.
-
-    args: String of lat/lon for stargazing site
-    returns: Tuple of distance to closest CDSC site, and dict of site info. If
-        no sites within 100km, return None
-    """
-    # get list of all csc site locations
-    with open(os.path.join(PATH, FILENAME), 'r') as f:
-        data = json.load(f)
-        nearby_charts = []
-        #get list of all sites within same or adjacent 1 degree lat/lon bin
-        try:
-            for x in range(-1,2):
-                for y in range(-1,2):
-                    lat_str = str(int(lat)+x)
-                    lon_str = str(int(lon)+y)
-                    if lat_str in data:
-                        if lon_str in data[lat_str]:
-                            sites_in_bin = data[lat_str][lon_str]
-                            for site in sites_in_bin:
-                                nearby_charts.append(site)
-        except:
-            print("CDSChart Error")
-
-        closest_site = {}
-        curr_closest_km = MAX_DIST_KM
-
-        # Find the closest site in Clear Dark Sky database within bins
-        for site in nearby_charts:
-            dist = latlonDistanceInKm(lat, lon, site["lat"], site["lon"])
-
-            if dist < curr_closest_km:
-                curr_closest_km = dist
-                closest_site = site
-
-        # grab site url and return site data if within 100km
-        if curr_closest_km < 100:
-            closest_site['dist_km'] = curr_closest_km
-            return closest_site
-
-        return None
-
 #TODO: Distance and elevation calls should probably be two methods
 def getLocationData(lat_origin, lon_origin, lat_selected, lon_selected):
     """Gets the elevation and distance to the given coordinates.
@@ -264,29 +169,9 @@ def getLocationData(lat_origin, lon_origin, lat_selected, lon_selected):
     returns: dictionary with elevation, distance in time and space, simple units and human readable
     """
 
-    if not G_MAPS_API_KEY:
-        raise Exception("Missing API Key for Google Maps")
+    dist_data = gmaps_distance_api(lat_origin, lon_origin, lat_selected, lon_selected)
+    elev_data = gmaps_elevation_api(lat_selected, lon_selected)
 
-    dist_params ={
-        "units": "imperial", # use metric outside USA?
-        "origins": str(lat_origin)+","+str(lon_origin),
-        "destinations": str(lat_selected)+","+str(lon_selected),
-        "key": G_MAPS_API_KEY
-    }
-    elev_params ={
-        "locations": str(lat_origin)+","+str(lon_origin),
-        "key": G_MAPS_API_KEY
-    }
-
-    dist_url = "https://maps.googleapis.com/maps/api/distancematrix/json"
-    elev_url = "https://maps.googleapis.com/maps/api/elevation/json"
-
-    # TO DO: Both GMaps API calls VERY slow... why?
-    dist_request = requests.get(dist_url, params=dist_params)
-    elev_request = requests.get(elev_url, params=elev_params)
-
-    dist_data = dist_request.json()
-    elev_data = elev_request.json()
 
     if 'duration' in dist_data['rows'][0]['elements'][0]:
         duration_text = dist_data['rows'][0]['elements'][0]['duration']['text']
@@ -384,13 +269,13 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
     humidity = weatherData["humidity"]
     cloud_cover = weatherData["cloudCover"]
     lunar_phase = weatherData["moonPhase"]
-    light_pol = getLightPollution(float(lat_starsite),float(lon_starsite))
+    light_pol = light_pollution_api(float(lat_starsite),float(lon_starsite))
     site_quality =  calculateRating(precip_prob, humidity, cloud_cover, light_pol)
     site_quality_discript = siteRatingDescipt(site_quality)
 
     #Only get CDS chart if time is within 24 hours
     if time < curr_time + 86000:
-        cds_chart = getCDSChart(float(lat_starsite),float(lon_starsite))
+        cds_chart = nearest_csc_api(float(lat_starsite),float(lon_starsite))
     else:
         cds_chart = None
 
@@ -412,19 +297,24 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
 
 @app.route("/test")
 def test():
+    time = getCurrentUnixTime()
+
     # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, no time param
     result = getStargazeReport(37.7360512,-122.4997348, 38.116947, -122.925357)
     print("********** SF-Pt. Reyes TEST w/o time **********")
     print(result,"\n")
 
+    # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 12 hr
+    result = getStargazeReport(37.7360512,-122.4997348, 39.580110, -122.524105, time+43000)
+    print("********** SF-Stony Gorge w/ time **********")
+    print(result,"\n")
+
     # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, time is in 24 hr
-    time = getCurrentUnixTime()
     result = getStargazeReport(37.7360512,-122.4997348, 38.116947, -122.925357, time+86000)
     print("********** SF-Pt. Reyes w/ time **********")
     print(result,"\n")
 
     # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 36 hr
-    time = getCurrentUnixTime() + 86000
     result = getStargazeReport(37.7360512,-122.4997348, 39.580110, -122.524105, time+129000)
     print("********** SF-Stony Gorge w/ time **********")
     print(result,"\n")
