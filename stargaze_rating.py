@@ -2,8 +2,15 @@
 # -*- coding: UTF-8 -*-
 from datetime import datetime as dt
 from flask import Flask
-from light_pollution import getLightPollution
-from nearest_csc import nearest_csc
+
+from apis import (
+    dark_sky_api,
+    gmaps_distance_api,
+    gmaps_elevation_api,
+    sunrise_sunset_time_api,
+    light_pollution_api,
+    nearest_csc_api
+    )
 
 import debug
 import json
@@ -32,6 +39,7 @@ MAX_DIST_KM = 100
 # Improvements to Code Quality/Standards
 # [ ] Lint/Check for PEP-8
 # [ ] Isolate API calls in seperate functions
+# [ ] Have 3 API endpoints: Stargazing, Driving Distance, CSC (Later: ISS, Planets, Meisser, etc)
 
 # ToDo Tweaks/Optomize
 # [ ] getDarknessTimes
@@ -83,18 +91,19 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     args: String representing lat/lon coords
     returns: Int of 10-digit Unix Time (integer seconds)
     """
-    params = {
-        "lat": lat_selected,
-        "lng": lon_selected,
-        "formatted": 0,
-        "date": str(convertUnixToYMDFormat(time)) if time else "",
-    }
+    # params = {
+    #     "lat": lat_selected,
+    #     "lng": lon_selected,
+    #     "formatted": 0,
+    #     "date": str(convertUnixToYMDFormat(time)) if time else "",
+    # }
 
-    # TODO: Currently only returns darkness times for today, must work for next 48 hours
-    # API accepts date paramter but in YYYY-MM-DD format, not unix time
-    sunset_url = "https://api.sunrise-sunset.org/json"
-    request = requests.get(sunset_url, params=params)
-    sunset_data = request.json()
+    # # TODO: Currently only returns darkness times for today, must work for next 48 hours
+    # # API accepts date paramter but in YYYY-MM-DD format, not unix time
+    # sunset_url = "https://api.sunrise-sunset.org/json"
+    # request = requests.get(sunset_url, params=params)
+    # sunset_data = request.json()
+    sunset_data = sunrise_sunset_time_api(lat_selected, lon_selected, time)
 
     # TODO: These times may be meaningless above/below (An)arctic Circle.
     # Check what API results are for arctic locations at different times of year
@@ -145,18 +154,7 @@ def isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_u
 
 
 def getWeatherAPI(lat_selected, lon_selected, time):
-    """Gets Weather report for location and time specified using darksky api
-
-    args: lat/lon and time for stargazing site
-    returns: weather api response in json format
-    """
-    if not DARKSKY_API_KEY:
-        raise Exception("Missing API Key for DarkSky")
-    
-    darksky_url = "https://api.darksky.net/forecast/%s/%.4f,%.4f,%d" %(DARKSKY_API_KEY, lat_selected, lon_selected, time)
-
-    request = requests.get(darksky_url)
-    return request.json()
+    pass
 
 
 def getWeatherAtTime(lat_selected, lon_selected, time=None):
@@ -167,7 +165,8 @@ def getWeatherAtTime(lat_selected, lon_selected, time=None):
     """
     # TODO: ONLY get data we need from API requests? Would be faster but requires
     # a lot more params in url request used. Probably worth it in the long run
-    weatherdata = getWeatherAPI(lat_selected, lon_selected, time)
+    # weatherdata = getWeatherAPI(lat_selected, lon_selected, time)
+    weatherdata = dark_sky_api(lat_selected, lon_selected, time)
 
     # debug.testDSAPI(weatherdata)
 
@@ -200,29 +199,33 @@ def getLocationData(lat_origin, lon_origin, lat_selected, lon_selected):
     returns: dictionary with elevation, distance in time and space, simple units and human readable
     """
 
-    if not G_MAPS_API_KEY:
-        raise Exception("Missing API Key for Google Maps")
+    # if not G_MAPS_API_KEY:
+    #     raise Exception("Missing API Key for Google Maps")
 
-    dist_params ={
-        "units": "imperial", # use metric outside USA?
-        "origins": str(lat_origin)+","+str(lon_origin),
-        "destinations": str(lat_selected)+","+str(lon_selected),
-        "key": G_MAPS_API_KEY
-    }
-    elev_params ={
-        "locations": str(lat_origin)+","+str(lon_origin),
-        "key": G_MAPS_API_KEY
-    }
+    # dist_params ={
+    #     "units": "imperial", # use metric outside USA?
+    #     "origins": str(lat_origin)+","+str(lon_origin),
+    #     "destinations": str(lat_selected)+","+str(lon_selected),
+    #     "key": G_MAPS_API_KEY
+    # }
+    # elev_params ={
+    #     "locations": str(lat_origin)+","+str(lon_origin),
+    #     "key": G_MAPS_API_KEY
+    # }
 
-    dist_url = "https://maps.googleapis.com/maps/api/distancematrix/json"
-    elev_url = "https://maps.googleapis.com/maps/api/elevation/json"
+    # dist_url = "https://maps.googleapis.com/maps/api/distancematrix/json"
+    # elev_url = "https://maps.googleapis.com/maps/api/elevation/json"
 
-    # TO DO: Both GMaps API calls VERY slow... why?
-    dist_request = requests.get(dist_url, params=dist_params)
-    elev_request = requests.get(elev_url, params=elev_params)
+    # # TO DO: Both GMaps API calls VERY slow... why?
+    # dist_request = requests.get(dist_url, params=dist_params)
+    # elev_request = requests.get(elev_url, params=elev_params)
 
-    dist_data = dist_request.json()
-    elev_data = elev_request.json()
+    # dist_data = dist_request.json()
+    # elev_data = elev_request.json()
+
+    dist_data = gmaps_distance_api(lat_origin, lon_origin, lat_selected, lon_selected)
+    elev_data = gmaps_elevation_api(lat_selected, lon_selected)
+
 
     if 'duration' in dist_data['rows'][0]['elements'][0]:
         duration_text = dist_data['rows'][0]['elements'][0]['duration']['text']
@@ -320,13 +323,13 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
     humidity = weatherData["humidity"]
     cloud_cover = weatherData["cloudCover"]
     lunar_phase = weatherData["moonPhase"]
-    light_pol = getLightPollution(float(lat_starsite),float(lon_starsite))
+    light_pol = light_pollution_api(float(lat_starsite),float(lon_starsite))
     site_quality =  calculateRating(precip_prob, humidity, cloud_cover, light_pol)
     site_quality_discript = siteRatingDescipt(site_quality)
 
     #Only get CDS chart if time is within 24 hours
     if time < curr_time + 86000:
-        cds_chart = nearest_csc(float(lat_starsite),float(lon_starsite))
+        cds_chart = nearest_csc_api(float(lat_starsite),float(lon_starsite))
     else:
         cds_chart = None
 
