@@ -4,7 +4,8 @@ from datetime import datetime as dt
 from flask import Flask
 
 from helpers import (
-    getCurrentUnixTime
+    getCurrentUnixTime,
+    convertYMDHStoUnixFormat
 )
 
 from apis import (
@@ -94,11 +95,8 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     morning_stagazing_ends = sunset_data['results']['nautical_twilight_begin']
     night_stagazing_begins = sunset_data['results']['nautical_twilight_end']
 
-    morning_stagazing_ends = dt.strptime(morning_stagazing_ends[:-6], '%Y-%m-%dT%H:%M:%S')
-    night_stagazing_begins = dt.strptime(night_stagazing_begins[:-6], '%Y-%m-%dT%H:%M:%S')
-
-    morning_stagazing_ends_unix = int((morning_stagazing_ends - dt(1970, 1, 1)).total_seconds())
-    night_stagazing_begins_unix = int((night_stagazing_begins - dt(1970, 1, 1)).total_seconds())
+    morning_stagazing_ends_unix = convertYMDHStoUnixFormat(morning_stagazing_ends)
+    night_stagazing_begins_unix = convertYMDHStoUnixFormat(night_stagazing_begins)
 
     # print("sg Start @:",morning_stagazing_ends_unix)
     # print("sg end   @:",night_stagazing_begins_unix)
