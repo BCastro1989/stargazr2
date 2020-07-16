@@ -48,13 +48,13 @@ MAX_DIST_KM = 100
 
 # ToDo Tweaks/Optomize
 # [ ] getDarknessTimes
-    # P1: [ ] TODO: Currently only returns darkness times for today, must work for next 48 hours
+    # P1: [✓] TODO: Currently only returns darkness times for today, must work for next 48 hours
         # API accepts date paramter but in YYYY-MM-DD format, not unix time
     # P2: [ ] TODO: These times may be meaningless above/below (An)arctic Circle.
         # Check what API results are for arctic locations at different times of year
         # If Midnight Sun, tell user no stargazing possible :(
         # If Polar Night, they can stargaze whenever they want! :)
-    # P1: [ ] TODO: I just found out the times here dont explicitly account for Daylight Savings.
+    # P1: [✓] TODO: I just found out the times here dont explicitly account for Daylight Savings.
         # This may or may not be an issue...
 # [ ] getWeatherAtTime
     # P3: [ ] TODO: ONLY get data we need from API requests? Would be faster but requires
@@ -78,17 +78,12 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     args: String representing lat/lon coords
     returns: Int of 10-digit Unix Time (integer seconds)
     """
-    # TODO: Currently only returns darkness times for today, must work for next 48 hours
-    # API accepts date paramter but in YYYY-MM-DD format, not unix time
     sunset_data = sunrise_sunset_time_api(lat_selected, lon_selected, time)
 
     # TODO: These times may be meaningless above/below (An)arctic Circle.
     # Check what API results are for arctic locations at different times of year
     # If Midnight Sun, tell user no stargazing possible :(
     # If Polar Night, they can stargaze whenever they want! :)
-
-    # TODO: I just found out the times here dont explicitly account for Daylight Savings.
-    # This may or may not be an issue...
 
     # start of astronomical twilight is good enough to begin stargazing
     # Nautical Twilight End = Start of Astronomical Twilight and vice-versa
@@ -98,6 +93,13 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     morning_stagazing_ends_unix = convertYMDHStoUnixFormat(morning_stagazing_ends)
     night_stagazing_begins_unix = convertYMDHStoUnixFormat(night_stagazing_begins)
 
+    # Midnight Sun, never dark
+    if morning_stagazing_ends == 1 or night_stagazing_begins == 1:
+        return {"sun_status": "Midnight Sun"}
+    # Polar Night, always dark
+    if morning_stagazing_ends == 0 or night_stagazing_begins == 0:
+        return {"sun_status": "Polar Night"}
+
     # Approximations of times following days. Looses accuracy at very high latitudes near equinox
     # Needed for TZ offsets since API always uses UTC, the times returned may be wrong day
     prevday_stagazing_begin_unix = night_stagazing_begins_unix - 86400
@@ -105,6 +107,7 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     nxtday_stagazing_begin_unix = night_stagazing_begins_unix + 86400
 
     darkness_times = {
+        "sun_status": "Normal"
         "prev_day_dusk": prevday_stagazing_begin_unix,
         "curr_day_dawn": morning_stagazing_ends_unix,
         "curr_day_dusk": night_stagazing_begins_unix,
@@ -281,8 +284,14 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
         time = curr_time
     # If it is not dark at 'time', then set time to once it gets dark
 
-    time = setTimeToDark(darkness_times, time)
-    #TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
+    if darkness_times["sun_status"] == "Midnight Sun":
+        return {"status": "One cannot stargaze in the land of the midnight sun. Try going closer to the equator!"}
+    elif darkness_times["sun_status"] == "Polar Night":
+        time = curr_time
+    else:
+        #TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
+        time = setTimeToDark(darkness_times, time)
+        
 
     weatherData = getWeatherAtTime(lat_starsite, lon_starsite, time)
 
@@ -301,6 +310,7 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
         cds_chart = None
 
     siteData = {
+        {"status": "Success!"}
         "siteQuality": site_quality,
         "siteQualityDiscript": site_quality_discript,
         "precipProb": precip_prob,
