@@ -94,10 +94,10 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     night_stagazing_begins_unix = convertYMDHStoUnixFormat(night_stagazing_begins)
 
     # Midnight Sun, never dark
-    if morning_stagazing_ends == 1 or night_stagazing_begins == 1:
+    if morning_stagazing_ends_unix == 1 or morning_stagazing_ends_unix == 1:
         return {"sun_status": "Midnight Sun"}
     # Polar Night, always dark
-    if morning_stagazing_ends == 0 or night_stagazing_begins == 0:
+    if morning_stagazing_ends_unix == 0 or night_stagazing_begins_unix == 0:
         return {"sun_status": "Polar Night"}
 
     # Approximations of times following days. Looses accuracy at very high latitudes near equinox
@@ -107,7 +107,7 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     nxtday_stagazing_begin_unix = night_stagazing_begins_unix + 86400
 
     darkness_times = {
-        "sun_status": "Normal"
+        "sun_status": "Normal",
         "prev_day_dusk": prevday_stagazing_begin_unix,
         "curr_day_dawn": morning_stagazing_ends_unix,
         "curr_day_dusk": night_stagazing_begins_unix,
@@ -169,7 +169,7 @@ def getWeatherAtTime(lat_selected, lon_selected, time=None):
 
     # TODO The response from weatherdata is slightly different if looking at future weather report!
     # Test responses at various future times, verify that below keys still exist and get correct values
-    precip_prob = weatherdata['currently']['precipProbability']
+    precip_prob = 0 #weatherdata['currently']['precipProbability']
     humidity = weatherdata['currently']['humidity']
     visibility = weatherdata['currently']['visibility']
     cloud_cover = weatherdata['currently']['cloudCover']
@@ -238,7 +238,7 @@ def siteRatingDescipt(site_quality):
     elif site_quality >= 0:
       site_quality_discript = "Terrible"
     else:
-      site_quality_discript = "Error: Select a site again"
+      site_quality_discript = "Could Not Determine Stargazing Quality. Weather or Light Pollution Data unavailible"
     return site_quality_discript
 
 
@@ -246,7 +246,7 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
     """ Calculate the stargazing quality based off weather, light pollution, etc.
 
     args: site statistics, light pollution
-    returns: Double rating from 0 - 100
+    returns: Double rating from 0 - 100, -1 for err
     """
     # TODO Equation for calulcating the rating needs some work.
     # 7 percent cloud cover and otherwise perfect conditions should not be a rating of 77, Fair.
@@ -255,7 +255,10 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
     precip_quality = (1-math.sqrt(precipProbability))
     humid_quality = (math.pow(-humidity+1,(1/3)))
     cloud_quality = (1-math.sqrt(cloudCover))
-    lightpol_quality = (abs(50-lightPol)/50) #should give rating between 0.9995 (Middle of Nowhere) - 0.0646 (Downtown LA)
+    if lightPol != "N/A":
+        lightpol_quality = (abs(50-lightPol)/50) #should give rating between 0.9995 (Middle of Nowhere) - 0.0646 (Downtown LA)
+    else:
+        return -1
 
     #Find overall site quality using weighted average
     site_quality_rating = ((((precip_quality * lightpol_quality * cloud_quality)*8) + (humid_quality*2))/10)*100
@@ -310,7 +313,7 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
         cds_chart = None
 
     siteData = {
-        {"status": "Success!"}
+        "status": "Success!",
         "siteQuality": site_quality,
         "siteQualityDiscript": site_quality_discript,
         "precipProb": precip_prob,
