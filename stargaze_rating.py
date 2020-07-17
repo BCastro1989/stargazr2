@@ -25,14 +25,6 @@ import pprint
 import requests
 import time as t
 
-app = Flask(__name__)
-DARKSKY_API_KEY = os.environ.get('DARKSKY_API_KEY', '')
-G_MAPS_API_KEY = os.environ.get('G_MAPS_API_KEY', '')
-
-PATH = "csc_data"
-FILENAME = "csc_sites.json"
-MAX_DIST_KM = 100
-
 # Features this API could use
 # P0: [✓] No stargazing reports during the day
 # P1: [✓] URL for img of nearest CLEAR SKY Chart, none if > 100 miles, display distance to site + name?
