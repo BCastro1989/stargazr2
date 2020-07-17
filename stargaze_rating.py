@@ -250,7 +250,7 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
     precip_quality = (1-math.sqrt(precipProbability))
     humid_quality = (math.pow(-humidity+1,(1/3)))
     cloud_quality = (1-math.sqrt(cloudCover))
-    if isinstance(lightPol, float()):
+    if isinstance(lightPol, float):
         lightpol_quality = (abs(50-lightPol)/50) #should give rating between 0.9995 (Middle of Nowhere) - 0.0646 (Downtown LA)
     else:
         return -1
