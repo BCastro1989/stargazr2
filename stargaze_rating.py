@@ -4,7 +4,8 @@ from datetime import datetime as dt
 from flask import Flask
 
 from helpers import (
-    getCurrentUnixTime
+    getCurrentUnixTime,
+    convertYMDHStoUnixFormat
 )
 
 from apis import (
@@ -46,14 +47,14 @@ MAX_DIST_KM = 100
 # [ ] Have 3 API endpoints: Stargazing, Driving Distance, CSC (Later: ISS, Planets, Meisser, etc)
 
 # ToDo Tweaks/Optomize
-# [ ] getDarknessTimes
-    # P1: [ ] TODO: Currently only returns darkness times for today, must work for next 48 hours
+# [✓] getDarknessTimes
+    # P1: [✓] TODO: Currently only returns darkness times for today, must work for next 48 hours
         # API accepts date paramter but in YYYY-MM-DD format, not unix time
-    # P2: [ ] TODO: These times may be meaningless above/below (An)arctic Circle.
+    # P2: [✓] TODO: These times may be meaningless above/below (An)arctic Circle.
         # Check what API results are for arctic locations at different times of year
         # If Midnight Sun, tell user no stargazing possible :(
         # If Polar Night, they can stargaze whenever they want! :)
-    # P1: [ ] TODO: I just found out the times here dont explicitly account for Daylight Savings.
+    # P1: [✓] TODO: I just found out the times here dont explicitly account for Daylight Savings.
         # This may or may not be an issue...
 # [ ] getWeatherAtTime
     # P3: [ ] TODO: ONLY get data we need from API requests? Would be faster but requires
@@ -77,56 +78,74 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     args: String representing lat/lon coords
     returns: Int of 10-digit Unix Time (integer seconds)
     """
-    # TODO: Currently only returns darkness times for today, must work for next 48 hours
-    # API accepts date paramter but in YYYY-MM-DD format, not unix time
     sunset_data = sunrise_sunset_time_api(lat_selected, lon_selected, time)
-
-    # TODO: These times may be meaningless above/below (An)arctic Circle.
-    # Check what API results are for arctic locations at different times of year
-    # If Midnight Sun, tell user no stargazing possible :(
-    # If Polar Night, they can stargaze whenever they want! :)
-
-    # TODO: I just found out the times here dont explicitly account for Daylight Savings.
-    # This may or may not be an issue...
 
     # start of astronomical twilight is good enough to begin stargazing
     # Nautical Twilight End = Start of Astronomical Twilight and vice-versa
     morning_stagazing_ends = sunset_data['results']['nautical_twilight_begin']
     night_stagazing_begins = sunset_data['results']['nautical_twilight_end']
 
-    morning_stagazing_ends = dt.strptime(morning_stagazing_ends[:-6], '%Y-%m-%dT%H:%M:%S')
-    night_stagazing_begins = dt.strptime(night_stagazing_begins[:-6], '%Y-%m-%dT%H:%M:%S')
+    morning_stagazing_ends_unix = convertYMDHStoUnixFormat(morning_stagazing_ends)
+    night_stagazing_begins_unix = convertYMDHStoUnixFormat(night_stagazing_begins)
 
-    morning_stagazing_ends_unix = int((morning_stagazing_ends - dt(1970, 1, 1)).total_seconds())
-    night_stagazing_begins_unix = int((night_stagazing_begins - dt(1970, 1, 1)).total_seconds())
+    # Midnight Sun, never dark
+    if morning_stagazing_ends_unix == 1 or morning_stagazing_ends_unix == 1:
+        return {"sun_status": "Midnight Sun"}
+    # Polar Night, always dark
+    if morning_stagazing_ends_unix == 0 or night_stagazing_begins_unix == 0:
+        return {"sun_status": "Polar Night"}
+
+    # Approximations of times following days. Looses accuracy at very high latitudes near equinox
+    # Needed for TZ offsets since API always uses UTC, the times returned may be wrong day
+    prevday_stagazing_begin_unix = night_stagazing_begins_unix - 86400
+    nxtday_stagazing_ends_unix = morning_stagazing_ends_unix + 86400
+    nxtday_stagazing_begin_unix = night_stagazing_begins_unix + 86400
+
+    darkness_times = {
+        "sun_status": "Normal",
+        "prev_day_dusk": prevday_stagazing_begin_unix,
+        "curr_day_dawn": morning_stagazing_ends_unix,
+        "curr_day_dusk": night_stagazing_begins_unix,
+        "next_day_dawn": nxtday_stagazing_ends_unix,
+        "next_day_dusk": nxtday_stagazing_begin_unix
+    }
 
     # print("sg Start @:",morning_stagazing_ends_unix)
     # print("sg end   @:",night_stagazing_begins_unix)
 
-    return (morning_stagazing_ends_unix, night_stagazing_begins_unix)
+    return darkness_times
 
 
-def isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, curr_time_unix):
-    """Checks if it is currently dark enough for stargazing
+def setTimeToDark(darkness_times, curr_time_unix):
+    """Sets Time for requests to once it is dark
+
+    Checks if it is currently dark enough for stargazing,
+    if not, sets time to once it is dark. darkness times 
+    are for the start/end of astronomical twilight. 
+    This can be used to infer roughly what time the sun is
+    far enough below horizon to allow stargazing
 
     args: Unix times for current time, darkness start/end time
     returns: Boolean
     """
     # pretty print(for debugging)
-    # debug.ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_stagazing_begins_unix)
+    # debug.ppWhenInDayNightCycle(darkness_times, curr_time_unix)
 
-    # Check if time is during the night or not
-    # morning_stagazing_ends_unix = end of astronomical twilight
-    # night_stagazing_begins_unix = start of astronomical
-    # THEREFORE: Inbetween values is Day, Outside is Night!
-    if curr_time_unix <= morning_stagazing_ends_unix or curr_time_unix >= night_stagazing_begins_unix:
-        # Dark enough for stargazing
-        # print("NIGHT\n")
-        return True
+    # Must consider several cases because sunrise-sunset API assumes all times are UTC, such that
+    # depending on the time zone of user, the darkness times may be given for the following day.
+    # This might be fixed by using user time zone from location, or passing TZ from client
+    if curr_time_unix <= darkness_times["prev_day_dusk"]:
+        return darkness_times["prev_day_dusk"]  # if before sunset, adjust time to after
+    elif curr_time_unix <= darkness_times["curr_day_dawn"]:
+        return curr_time_unix # After Sunset, Before Sunrise
+    elif curr_time_unix <= darkness_times["curr_day_dusk"]:
+        return darkness_times["curr_day_dusk"]  # if before sunset, adjust time to after
+    elif curr_time_unix <= darkness_times["next_day_dawn"]:
+        return curr_time_unix # After Sunset, Before Sunrise
+    elif curr_time_unix <= darkness_times["next_day_dusk"]:
+        return darkness_times["next_day_dusk"]
     else:
-        # Not dark enough yet
-        # print("NO NIGHT YET\n")
-        return False
+        raise Exception("setTimeToDark: Time selected outside bounds")
 
 def getWeatherAtTime(lat_selected, lon_selected, time=None):
     """Gets Weather report for location and time specified.
@@ -214,7 +233,7 @@ def siteRatingDescipt(site_quality):
     elif site_quality >= 0:
       site_quality_discript = "Terrible"
     else:
-      site_quality_discript = "Error: Select a site again"
+      site_quality_discript = "Could Not Determine Stargazing Quality. Weather or Light Pollution Data unavailible"
     return site_quality_discript
 
 
@@ -222,7 +241,7 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
     """ Calculate the stargazing quality based off weather, light pollution, etc.
 
     args: site statistics, light pollution
-    returns: Double rating from 0 - 100
+    returns: Double rating from 0 - 100, -1 for err
     """
     # TODO Equation for calulcating the rating needs some work.
     # 7 percent cloud cover and otherwise perfect conditions should not be a rating of 77, Fair.
@@ -231,7 +250,10 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
     precip_quality = (1-math.sqrt(precipProbability))
     humid_quality = (math.pow(-humidity+1,(1/3)))
     cloud_quality = (1-math.sqrt(cloudCover))
-    lightpol_quality = (abs(50-lightPol)/50) #should give rating between 0.9995 (Middle of Nowhere) - 0.0646 (Downtown LA)
+    if isinstance(lightPol, float):
+        lightpol_quality = (abs(50-lightPol)/50) #should give rating between 0.9995 (Middle of Nowhere) - 0.0646 (Downtown LA)
+    else:
+        return -1
 
     #Find overall site quality using weighted average
     site_quality_rating = ((((precip_quality * lightpol_quality * cloud_quality)*8) + (humid_quality*2))/10)*100
@@ -251,7 +273,7 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
 
     returns: dictionary with data needed for API response/display in front end
     """
-    morning_stagazing_ends_unix, night_stagazing_begins_unix = getDarknessTimes(lat_starsite, lon_starsite, time)
+    darkness_times = getDarknessTimes(lat_starsite, lon_starsite, time)
 
     curr_time = getCurrentUnixTime()
 
@@ -259,9 +281,15 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
     if not time:
         time = curr_time
     # If it is not dark at 'time', then set time to once it gets dark
-    if not isDark(morning_stagazing_ends_unix, night_stagazing_begins_unix, time):
-        time = night_stagazing_begins_unix
+
+    if darkness_times["sun_status"] == "Midnight Sun":
+        return {"status": "One cannot stargaze in the land of the midnight sun. Try going closer to the equator!"}
+    elif darkness_times["sun_status"] == "Polar Night":
+        time = curr_time
+    else:
         #TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
+        time = setTimeToDark(darkness_times, time)
+        
 
     weatherData = getWeatherAtTime(lat_starsite, lon_starsite, time)
 
@@ -280,6 +308,7 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
         cds_chart = None
 
     siteData = {
+        "status": "Success!",
         "siteQuality": site_quality,
         "siteQualityDiscript": site_quality_discript,
         "precipProb": precip_prob,

@@ -19,3 +19,13 @@ def convertUnixToYMDFormat(unixtime):
     """
     return dt.utcfromtimestamp(unixtime).strftime("%Y-%m-%d")
 
+
+def convertYMDHStoUnixFormat(timestamp):
+    """Convert time to unix epoch from human-readable YYYY-MM-DD-H-M-S.
+    Assumes time is UTC, no time zones or DLS
+
+    args: String representing time in YYYY-MM-DD
+    returns: int representing unix time
+    """
+    timestamp = dt.strptime(timestamp[:-6], '%Y-%m-%dT%H:%M:%S')
+    return int((timestamp - dt(1970, 1, 1)).total_seconds())

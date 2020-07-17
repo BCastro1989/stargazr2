@@ -16,21 +16,22 @@ def testDSAPI(weatherdata):
         print("DARKSKY API RESPONSE SUCESS\n")
 
 
-def ppWhenInDayNightCycle(morning_stagazing_ends_unix, curr_time_unix, night_stagazing_begins_unix):
+def ppWhenInDayNightCycle(darkness_times, curr_time_unix):
     """Pretty prints current time in relation to darkness start/stop times
 
     args: unix timestamp for current time, morning darkness ends, night darkness begins
     returns: None
     """
     times = {
-    "prev stargaze_start": int(night_stagazing_begins_unix) - 86400,
-    "stargaze_end       ": int(morning_stagazing_ends_unix),
-    "***curr_time***    ": int(curr_time_unix),
-    "stargaze_start     ": int(night_stagazing_begins_unix),
-    "next stargaze_end  ": int(morning_stagazing_ends_unix) + 86400,
+        "prev stargaze_start": int(darkness_times["prev_day_dusk"]),
+        "stargaze_end       ": int(darkness_times["curr_day_dawn"]),
+        "***curr_time***    ": int(curr_time_unix),
+        "stargaze_start     ": int(darkness_times["curr_day_dusk"]),
+        "next stargaze_end  ": int(darkness_times["next_day_dawn"]),
+        "next stargaze_start": int(darkness_times["next_day_dusk"]),
     }
-    print("********* When Current time is in Day/Night Cycle? *********")
-    for key, value in sorted(times.iteritems(), key=lambda k,v: (v,k)):
+    # print("********* When Current time is in Day/Night Cycle? *********")
+    for key, value in sorted(list(times.items()), key=lambda x: x[1]):
         print("%s: %s" % (key, value))
 
 

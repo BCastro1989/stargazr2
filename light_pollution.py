@@ -116,6 +116,7 @@ def getLightPollution(lat,lon):
     except IndexError as e:
         print( "Error: %s" % e)
     except IOError as e:
+        light_poll_ratio = 0.01 #If no coverage, almost certainly in very remote area (near poles)
         print( "Error: There's no coverage for %s" % image_name)
 
     return light_poll_ratio # JsonResponse({'light_pollution': light_poll_ratio})
