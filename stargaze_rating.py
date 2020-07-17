@@ -47,10 +47,10 @@ MAX_DIST_KM = 100
 # [ ] Have 3 API endpoints: Stargazing, Driving Distance, CSC (Later: ISS, Planets, Meisser, etc)
 
 # ToDo Tweaks/Optomize
-# [ ] getDarknessTimes
+# [✓] getDarknessTimes
     # P1: [✓] TODO: Currently only returns darkness times for today, must work for next 48 hours
         # API accepts date paramter but in YYYY-MM-DD format, not unix time
-    # P2: [ ] TODO: These times may be meaningless above/below (An)arctic Circle.
+    # P2: [✓] TODO: These times may be meaningless above/below (An)arctic Circle.
         # Check what API results are for arctic locations at different times of year
         # If Midnight Sun, tell user no stargazing possible :(
         # If Polar Night, they can stargaze whenever they want! :)
@@ -79,11 +79,6 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     returns: Int of 10-digit Unix Time (integer seconds)
     """
     sunset_data = sunrise_sunset_time_api(lat_selected, lon_selected, time)
-
-    # TODO: These times may be meaningless above/below (An)arctic Circle.
-    # Check what API results are for arctic locations at different times of year
-    # If Midnight Sun, tell user no stargazing possible :(
-    # If Polar Night, they can stargaze whenever they want! :)
 
     # start of astronomical twilight is good enough to begin stargazing
     # Nautical Twilight End = Start of Astronomical Twilight and vice-versa
@@ -146,7 +141,7 @@ def setTimeToDark(darkness_times, curr_time_unix):
     elif curr_time_unix <= darkness_times["curr_day_dusk"]:
         return darkness_times["curr_day_dusk"]  # if before sunset, adjust time to after
     elif curr_time_unix <= darkness_times["next_day_dawn"]:
-        return curr_time_unix  # After Sunset, Before Sunrise
+        return curr_time_unix # After Sunset, Before Sunrise
     elif curr_time_unix <= darkness_times["next_day_dusk"]:
         return darkness_times["next_day_dusk"]
     else:
@@ -169,7 +164,7 @@ def getWeatherAtTime(lat_selected, lon_selected, time=None):
 
     # TODO The response from weatherdata is slightly different if looking at future weather report!
     # Test responses at various future times, verify that below keys still exist and get correct values
-    precip_prob = 0 #weatherdata['currently']['precipProbability']
+    precip_prob = weatherdata['currently']['precipProbability']
     humidity = weatherdata['currently']['humidity']
     visibility = weatherdata['currently']['visibility']
     cloud_cover = weatherdata['currently']['cloudCover']
@@ -255,7 +250,7 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
     precip_quality = (1-math.sqrt(precipProbability))
     humid_quality = (math.pow(-humidity+1,(1/3)))
     cloud_quality = (1-math.sqrt(cloudCover))
-    if lightPol != "N/A":
+    if isinstance(lightPol, float()):
         lightpol_quality = (abs(50-lightPol)/50) #should give rating between 0.9995 (Middle of Nowhere) - 0.0646 (Downtown LA)
     else:
         return -1
