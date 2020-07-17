@@ -74,8 +74,8 @@ def setTimeToDark(darkness_times, curr_time_unix):
     """Sets Time for requests to once it is dark
 
     Checks if it is currently dark enough for stargazing,
-    if not, sets time to once it is dark. darkness times 
-    are for the start/end of astronomical twilight. 
+    if not, sets time to once it is dark. darkness times
+    are for the start/end of astronomical twilight.
     This can be used to infer roughly what time the sun is
     far enough below horizon to allow stargazing
 
@@ -123,7 +123,7 @@ def getWeatherAtTime(lat_selected, lon_selected, time=None):
     humidity = weatherdata['currently']['humidity']
     visibility = weatherdata['currently']['visibility']
     cloud_cover = weatherdata['currently']['cloudCover']
-    moon_phase = weatherdata['daily']['data'][0]['moonPhase'] # 0 tells to grab todays phase. allows 0-7 for phases over next week
+    moon_phase = weatherdata['daily']['data'][0]['moonPhase']  # 0 tells to grab todays phase. allows 0-7 for phases over next week
 
     return {
         "precipProb": precip_prob,
@@ -199,22 +199,22 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
     # 7 percent cloud cover and otherwise perfect conditions should not be a rating of 77, Fair.
 
     # Rate quality based on each parameter
-    precip_quality = (1-math.sqrt(precipProbability))
-    humid_quality = (math.pow(-humidity+1, (1/3)))
-    cloud_quality = (1-math.sqrt(cloudCover))
+    precip_quality = (1 - math.sqrt(precipProbability))
+    humid_quality = (math.pow(-humidity + 1, (1/3)))
+    cloud_quality = (1 - math.sqrt(cloudCover))
     if isinstance(lightPol, float):
         # should give rating between 0.9995 (Middle of Nowhere) - 0.0646 (Downtown LA)
-        lightpol_quality = (abs(50-lightPol)/50)
+        lightpol_quality = (abs(50 - lightPol) / 50)
     else:
         return -1
 
     # Find overall site quality using weighted average
-    site_quality_rating = ((((precip_quality * lightpol_quality * cloud_quality)*8) + (humid_quality*2))/10)*100
+    site_quality_rating = ((((precip_quality * lightpol_quality * cloud_quality) * 8) + (humid_quality * 2)) / 10) * 100
 
     return site_quality_rating
 
 
-#TODO: CleanUp/Refactor
+# TODO: CleanUp/Refactor
 @app.route("/stargazr")
 def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
     """get stargazing report based on given coordinates.
@@ -287,17 +287,17 @@ def test():
     print(result, "\n")
 
     # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 12 hr
-    result = getStargazeReport(37.7360512, -122.4997348, 39.580110, -122.524105, time+43000)
+    result = getStargazeReport(37.7360512, -122.4997348, 39.580110, -122.524105, time + 43000)
     print("********** SF-Stony Gorge w/ time **********")
     print(result, "\n")
 
     # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, time is in 24 hr
-    result = getStargazeReport(37.7360512, -122.4997348, 38.116947, -122.925357, time+86000)
+    result = getStargazeReport(37.7360512, -122.4997348, 38.116947, -122.925357, time + 86000)
     print("********** SF-Pt. Reyes w/ time **********")
     print(result, "\n")
 
     # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 36 hr
-    result = getStargazeReport(37.7360512, -122.4997348, 39.580110, -122.524105, time+129000)
+    result = getStargazeReport(37.7360512, -122.4997348, 39.580110, -122.524105, time + 129000)
     print("********** SF-Stony Gorge w/ time **********")
     print(result, "\n")
     return
