@@ -17,6 +17,7 @@ DARKSKY_URL = "https://api.darksky.net/forecast/%s/%.4f,%.4f,%d"
 GMAPS_ELEV_URL = "https://maps.googleapis.com/maps/api/elevation/json"
 GMAPS_DIST_URL = "https://maps.googleapis.com/maps/api/distancematrix/json"
 
+
 def dark_sky_api(lat_selected, lon_selected, time):
     """Gets Weather report for location and time specified using darksky api
 
@@ -25,8 +26,8 @@ def dark_sky_api(lat_selected, lon_selected, time):
     """
     if not DARKSKY_API_KEY:
         raise Exception("Missing API Key for DarkSky")
-    
-    request = requests.get(DARKSKY_URL %(DARKSKY_API_KEY, lat_selected, lon_selected, time))
+
+    request = requests.get(DARKSKY_URL % (DARKSKY_API_KEY, lat_selected, lon_selected, time))
     return request.json()
 
 
@@ -39,7 +40,7 @@ def gmaps_elevation_api(lat_selected, lon_selected):
     if not G_MAPS_API_KEY:
         raise Exception("Missing API Key for Google Maps")
 
-    elev_params ={
+    elev_params = {
         "locations": str(lat_selected)+","+str(lon_selected),
         "key": G_MAPS_API_KEY
     }
@@ -58,7 +59,7 @@ def gmaps_distance_api(lat_origin, lon_origin, lat_selected, lon_selected):
     if not G_MAPS_API_KEY:
         raise Exception("Missing API Key for Google Maps")
 
-    dist_params ={
+    dist_params = {
         "origins": str(lat_origin)+","+str(lon_origin),
         "destinations": str(lat_selected)+","+str(lon_selected),
         "key": G_MAPS_API_KEY
@@ -68,7 +69,7 @@ def gmaps_distance_api(lat_origin, lon_origin, lat_selected, lon_selected):
 
     return dist_request.json()
 
-    
+
 def sunrise_sunset_time_api(lat_selected, lon_selected, time):
     """Gets the times the sun will rise/set, and reach "twilight" conditions sufficent for stargazing
 
@@ -94,13 +95,13 @@ def light_pollution_api(lat_starsite, lon_starsite):
     args: lat/lon for stargazing site selcted
     returns: json response with light pollution levels (additional brightness ratio)
     """
-    return getLightPollution(float(lat_starsite),float(lon_starsite))
+    return getLightPollution(float(lat_starsite), float(lon_starsite))
 
 
-def nearest_csc_api(lat_starsite,lon_starsite):
+def nearest_csc_api(lat_starsite, lon_starsite):
     """Gets nearest Clear Sky Chart. Internal API.
 
     args: lat/lon for stargazing site selcted
     returns: json response with the nearest CSC.
     """
-    return nearest_csc(float(lat_starsite),float(lon_starsite))
+    return nearest_csc(float(lat_starsite), float(lon_starsite))

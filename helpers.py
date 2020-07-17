@@ -2,6 +2,7 @@
 from datetime import datetime as dt
 import time as t
 
+
 def getCurrentUnixTime():
     """Get current time in UNIX format.
 

@@ -5,24 +5,27 @@ PATH = "csc_data"
 FILENAME = "csc_sites.json"
 MAX_DIST_KM = 100
 
+
 def lat_lng_distance_in_km(lat1, lng1, lat2, lng2):
     """Calculate distance between two latitude-longitide points on sphere in kilometres.
 
     args: Float lat/lng for two points on Earth
     returns: Float representing distance in kilometres
     """
-    R = 6371 # Earth Radius in kilometres (assume perfect sphere)
+    R = 6371  # Earth Radius in kilometres (assume perfect sphere)
 
     phi1 = math.radians(lat1)
     phi2 = math.radians(lat2)
     d_phi = math.radians(lat2-lat1)
     d_lambda = math.radians(lng2-lng1)
 
-    a = math.sin(d_phi/2) * math.sin(d_phi/2) + math.cos(phi1) * math.cos(phi2) * math.sin(d_lambda/2) * math.sin(d_lambda/2)
+    a = math.sin(d_phi/2) * math.sin(d_phi/2) + math.cos(phi1) * \
+        math.cos(phi2) * math.sin(d_lambda/2) * math.sin(d_lambda/2)
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     d = R * c
 
-    return round(d,1) # Assume Accurate within ~0.1km due to Idealized Sphere Earth
+    return round(d, 1)  # Assume Accurate within ~0.1km due to Idealized Sphere Earth
+
 
 def nearest_csc(lat, lng):
     """Nearest Clear Sky Chart from A. Danko's site: https://www.cleardarksky.com/
@@ -44,8 +47,8 @@ def nearest_csc(lat, lng):
 
         # Get list of all sites within same or adjacent 1 degree lat/lng bin
         try:
-            for x in range(-1,2):
-                for y in range(-1,2):
+            for x in range(-1, 2):
+                for y in range(-1, 2):
                     lat_str = str(int(lat)+x)
                     lng_str = str(int(lng)+y)
                     if lat_str in data:
@@ -73,7 +76,9 @@ def nearest_csc(lat, lng):
             closest_site['dist_km'] = curr_closest_km
             closest_site['full_img'] = "https://www.cleardarksky.com/c/"+closest_site['id']+"csk.gif"
             closest_site['mini_img'] = "https://www.cleardarksky.com/c/"+closest_site['id']+"cs0.gif"
-        else: 
-            closest_site = {'status_msg': "No sites within 100 km. CSC sites are only available in the Continental US, Canada, and Northern Mexico"}
+        else:
+            closest_site = {
+                'status_msg': "No sites within 100 km. CSC sites are only available in the Continental US, Canada, and Northern Mexico"
+            }
 
         return closest_site

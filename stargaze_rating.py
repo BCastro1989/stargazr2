@@ -15,7 +15,7 @@ from apis import (
     sunrise_sunset_time_api,
     light_pollution_api,
     nearest_csc_api
-    )
+)
 
 import debug
 import json
@@ -24,44 +24,6 @@ import os
 import pprint
 import requests
 import time as t
-
-# Features this API could use
-# P0: [✓] No stargazing reports during the day
-# P1: [✓] URL for img of nearest CLEAR SKY Chart, none if > 100 miles, display distance to site + name?
-# P2: [✓] Allow user to specify what time to check
-# P3: [ ] TIME of Next ISS overpass + visibility, az/alt
-# P4: [ ] Any planets visible, where (specific + rough locations - i.e. az/art and general direction and height)
-# P4: [ ] Key Meisser Objects, and other popular deep sky objects
-
-# Improvements to Code Quality/Standards
-# [ ] Lint/Check for PEP-8
-# [✓] Isolate API calls in seperate functions
-# [ ] Have 3 API endpoints: Stargazing, Driving Distance, CSC (Later: ISS, Planets, Meisser, etc)
-
-# ToDo Tweaks/Optomize
-# [✓] getDarknessTimes
-    # P1: [✓] TODO: Currently only returns darkness times for today, must work for next 48 hours
-        # API accepts date paramter but in YYYY-MM-DD format, not unix time
-    # P2: [✓] TODO: These times may be meaningless above/below (An)arctic Circle.
-        # Check what API results are for arctic locations at different times of year
-        # If Midnight Sun, tell user no stargazing possible :(
-        # If Polar Night, they can stargaze whenever they want! :)
-    # P1: [✓] TODO: I just found out the times here dont explicitly account for Daylight Savings.
-        # This may or may not be an issue...
-# [ ] getWeatherAtTime
-    # P3: [ ] TODO: ONLY get data we need from API requests? Would be faster but requires
-        # a lot more params in url request used. Probably worth it in the long run
-    # P1: [ ] TODO The response from weatherdata is slightly different if looking at future weather report!
-        # Test responses at various future times, verify that below keys still exist and get correct values
-# [✓] getCDSChart
-    # P3 TODO: Use more accurate distance model/equation
-# [✓] getLocationData
-    # P2 [✓] TODO: Distance and elevation calls should probably be two methods
-    # P0 [✓?] TODO: Both GMaps API calls VERY slow... why?
-# [ ] calculateRating
-    # P4 [ ] TODO Equation for calulcating the rating needs some work.
-# [ ] getStargazeReport
-    # P3 [ ] TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
 
 
 def getDarknessTimes(lat_selected, lon_selected, time):
@@ -129,15 +91,16 @@ def setTimeToDark(darkness_times, curr_time_unix):
     if curr_time_unix <= darkness_times["prev_day_dusk"]:
         return darkness_times["prev_day_dusk"]  # if before sunset, adjust time to after
     elif curr_time_unix <= darkness_times["curr_day_dawn"]:
-        return curr_time_unix # After Sunset, Before Sunrise
+        return curr_time_unix  # After Sunset, Before Sunrise
     elif curr_time_unix <= darkness_times["curr_day_dusk"]:
         return darkness_times["curr_day_dusk"]  # if before sunset, adjust time to after
     elif curr_time_unix <= darkness_times["next_day_dawn"]:
-        return curr_time_unix # After Sunset, Before Sunrise
+        return curr_time_unix  # After Sunset, Before Sunrise
     elif curr_time_unix <= darkness_times["next_day_dusk"]:
         return darkness_times["next_day_dusk"]
     else:
         raise Exception("setTimeToDark: Time selected outside bounds")
+
 
 def getWeatherAtTime(lat_selected, lon_selected, time=None):
     """Gets Weather report for location and time specified.
@@ -160,19 +123,17 @@ def getWeatherAtTime(lat_selected, lon_selected, time=None):
     humidity = weatherdata['currently']['humidity']
     visibility = weatherdata['currently']['visibility']
     cloud_cover = weatherdata['currently']['cloudCover']
-    moon_phase = weatherdata['daily']['data'][0]['moonPhase'] #0 tells to grab todays phase. allows 0-7 for phases over next week
-
+    moon_phase = weatherdata['daily']['data'][0]['moonPhase'] # 0 tells to grab todays phase. allows 0-7 for phases over next week
 
     return {
-        "precipProb":precip_prob,
-        "humidity":humidity,
-        "visibility":visibility,
-        "cloudCover":cloud_cover,
-        "moonPhase":moon_phase,
+        "precipProb": precip_prob,
+        "humidity": humidity,
+        "visibility": visibility,
+        "cloudCover": cloud_cover,
+        "moonPhase": moon_phase,
     }
 
 
-#TODO: Distance and elevation calls should probably be two methods
 def getLocationData(lat_origin, lon_origin, lat_selected, lon_selected):
     """Gets the elevation and distance to the given coordinates.
 
@@ -182,7 +143,6 @@ def getLocationData(lat_origin, lon_origin, lat_selected, lon_selected):
 
     dist_data = gmaps_distance_api(lat_origin, lon_origin, lat_selected, lon_selected)
     elev_data = gmaps_elevation_api(lat_selected, lon_selected)
-
 
     if 'duration' in dist_data['rows'][0]['elements'][0]:
         duration_text = dist_data['rows'][0]['elements'][0]['duration']['text']
@@ -213,19 +173,19 @@ def siteRatingDescipt(site_quality):
     returns: String describing site quality
     """
     if site_quality > 95:
-      site_quality_discript = "Excellent"
+        site_quality_discript = "Excellent"
     elif site_quality > 90:
-      site_quality_discript = "Very Good"
+        site_quality_discript = "Very Good"
     elif site_quality > 80:
-      site_quality_discript = "Good"
+        site_quality_discript = "Good"
     elif site_quality > 50:
-      site_quality_discript = "Fair"
+        site_quality_discript = "Fair"
     elif site_quality > 30:
-      site_quality_discript = "Poor"
+        site_quality_discript = "Poor"
     elif site_quality >= 0:
-      site_quality_discript = "Terrible"
+        site_quality_discript = "Terrible"
     else:
-      site_quality_discript = "Could Not Determine Stargazing Quality. Weather or Light Pollution Data unavailible"
+        site_quality_discript = "Could Not Determine Stargazing Quality. Weather or Light Pollution Data unavailible"
     return site_quality_discript
 
 
@@ -240,14 +200,15 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
 
     # Rate quality based on each parameter
     precip_quality = (1-math.sqrt(precipProbability))
-    humid_quality = (math.pow(-humidity+1,(1/3)))
+    humid_quality = (math.pow(-humidity+1, (1/3)))
     cloud_quality = (1-math.sqrt(cloudCover))
     if isinstance(lightPol, float):
-        lightpol_quality = (abs(50-lightPol)/50) #should give rating between 0.9995 (Middle of Nowhere) - 0.0646 (Downtown LA)
+        # should give rating between 0.9995 (Middle of Nowhere) - 0.0646 (Downtown LA)
+        lightpol_quality = (abs(50-lightPol)/50)
     else:
         return -1
 
-    #Find overall site quality using weighted average
+    # Find overall site quality using weighted average
     site_quality_rating = ((((precip_quality * lightpol_quality * cloud_quality)*8) + (humid_quality*2))/10)*100
 
     return site_quality_rating
@@ -279,9 +240,8 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
     elif darkness_times["sun_status"] == "Polar Night":
         time = curr_time
     else:
-        #TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
+        # TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
         time = setTimeToDark(darkness_times, time)
-        
 
     weatherData = getWeatherAtTime(lat_starsite, lon_starsite, time)
 
@@ -289,13 +249,13 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
     humidity = weatherData["humidity"]
     cloud_cover = weatherData["cloudCover"]
     lunar_phase = weatherData["moonPhase"]
-    light_pol = light_pollution_api(float(lat_starsite),float(lon_starsite))
-    site_quality =  calculateRating(precip_prob, humidity, cloud_cover, light_pol)
+    light_pol = light_pollution_api(float(lat_starsite), float(lon_starsite))
+    site_quality = calculateRating(precip_prob, humidity, cloud_cover, light_pol)
     site_quality_discript = siteRatingDescipt(site_quality)
 
-    #Only get CDS chart if time is within 24 hours
+    # Only get CDS chart if time is within 24 hours
     if time < curr_time + 86000:
-        cds_chart = nearest_csc_api(float(lat_starsite),float(lon_starsite))
+        cds_chart = nearest_csc_api(float(lat_starsite), float(lon_starsite))
     else:
         cds_chart = None
 
@@ -316,30 +276,32 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
 
     return json.dumps(siteData)
 
+
 @app.route("/test")
 def test():
     time = getCurrentUnixTime()
 
     # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, no time param
-    result = getStargazeReport(37.7360512,-122.4997348, 38.116947, -122.925357)
+    result = getStargazeReport(37.7360512, -122.4997348, 38.116947, -122.925357)
     print("********** SF-Pt. Reyes TEST w/o time **********")
-    print(result,"\n")
+    print(result, "\n")
 
     # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 12 hr
-    result = getStargazeReport(37.7360512,-122.4997348, 39.580110, -122.524105, time+43000)
+    result = getStargazeReport(37.7360512, -122.4997348, 39.580110, -122.524105, time+43000)
     print("********** SF-Stony Gorge w/ time **********")
-    print(result,"\n")
+    print(result, "\n")
 
     # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, time is in 24 hr
-    result = getStargazeReport(37.7360512,-122.4997348, 38.116947, -122.925357, time+86000)
+    result = getStargazeReport(37.7360512, -122.4997348, 38.116947, -122.925357, time+86000)
     print("********** SF-Pt. Reyes w/ time **********")
-    print(result,"\n")
+    print(result, "\n")
 
     # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 36 hr
-    result = getStargazeReport(37.7360512,-122.4997348, 39.580110, -122.524105, time+129000)
+    result = getStargazeReport(37.7360512, -122.4997348, 39.580110, -122.524105, time+129000)
     print("********** SF-Stony Gorge w/ time **********")
-    print(result,"\n")
+    print(result, "\n")
     return
+
 
 if __name__ == "__main__":
     test()

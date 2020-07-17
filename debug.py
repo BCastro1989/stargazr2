@@ -3,6 +3,7 @@ Various helper functions for debugging, pretty printing, etc
 
 """
 
+
 def testDSAPI(weatherdata):
     """DEBUG function for ensuring sucessful call to DarkSky Weather API.
 
@@ -35,10 +36,10 @@ def ppWhenInDayNightCycle(darkness_times, curr_time_unix):
         print("%s: %s" % (key, value))
 
 
-def ppSiteRatingBreakdown( precipProbability, humidity, cloudCover, lightPol, precip_quality, humid_quality, cloud_quality, lightpol_quality, site_quality_rating):
+def ppSiteRatingBreakdown(precipProbability, humidity, cloudCover, lightPol, precip_quality, humid_quality, cloud_quality, lightpol_quality, site_quality_rating):
     print("********* Site Rating Breakdown *********")
-    print("precipProbability:", precipProbability, ">", str(round(precip_quality*100,1))+"%")
-    print("humidity:", humidity, ">", str(round(humid_quality*100,1))+"%")
-    print("cloudCover:", cloudCover, ">", str(round(cloud_quality*100,1))+"%")
-    print("lightPol:", lightPol, ">", str(round(lightpol_quality*100,1))+"%")
-    print("site_quality_rating:", str(round(site_quality_rating,1))+"%\n")
+    print("precipProbability:", precipProbability, ">", str(round(precip_quality*100, 1))+"%")
+    print("humidity:", humidity, ">", str(round(humid_quality*100, 1))+"%")
+    print("cloudCover:", cloudCover, ">", str(round(cloud_quality*100, 1))+"%")
+    print("lightPol:", lightPol, ">", str(round(lightpol_quality*100, 1))+"%")
+    print("site_quality_rating:", str(round(site_quality_rating, 1))+"%\n")
