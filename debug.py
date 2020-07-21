@@ -24,12 +24,12 @@ def pp_when_in_day_night_cycle(darkness_times, curr_time_unix):
     returns: None
     """
     times = {
-        "prev stargaze_start": int(darkness_times["prev_day_dusk"]),
-        "stargaze_end       ": int(darkness_times["curr_day_dawn"]),
-        "***curr_time***    ": int(curr_time_unix),
-        "stargaze_start     ": int(darkness_times["curr_day_dusk"]),
-        "next stargaze_end  ": int(darkness_times["next_day_dawn"]),
-        "next stargaze_start": int(darkness_times["next_day_dusk"]),
+        'prev stargaze_start': int(darkness_times['prev_day_dusk']),
+        'stargaze_end       ': int(darkness_times['curr_day_dawn']),
+        '***curr_time***    ': int(curr_time_unix),
+        'stargaze_start     ': int(darkness_times['curr_day_dusk']),
+        'next stargaze_end  ': int(darkness_times['next_day_dawn']),
+        'next stargaze_start': int(darkness_times['next_day_dusk']),
     }
     # print("********* When Current time is in Day/Night Cycle? *********")
     for key, value in sorted(list(times.items()), key=lambda x: x[1]):

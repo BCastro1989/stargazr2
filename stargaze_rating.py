@@ -37,10 +37,10 @@ def get_darkness_times(lat_selected, lon_selected, time):
 
     # Midnight Sun, never dark
     if morning_stagazing_ends_unix == 1 or morning_stagazing_ends_unix == 1:
-        return {"sun_status": "Midnight Sun"}
+        return {'sun_status': 'Midnight Sun'}
     # Polar Night, always dark
     if morning_stagazing_ends_unix == 0 or night_stagazing_begins_unix == 0:
-        return {"sun_status": "Polar Night"}
+        return {'sun_status': 'Polar Night'}
 
     # Approximations of times following days. Looses accuracy at very high latitudes near equinox
     # Needed for TZ offsets since API always uses UTC, the times returned may be wrong day
@@ -49,16 +49,16 @@ def get_darkness_times(lat_selected, lon_selected, time):
     nxtday_stagazing_begin_unix = night_stagazing_begins_unix + 86400
 
     darkness_times = {
-        "sun_status": "Normal",
-        "prev_day_dusk": prevday_stagazing_begin_unix,
-        "curr_day_dawn": morning_stagazing_ends_unix,
-        "curr_day_dusk": night_stagazing_begins_unix,
-        "next_day_dawn": nxtday_stagazing_ends_unix,
-        "next_day_dusk": nxtday_stagazing_begin_unix
+        'sun_status': 'Normal',
+        'prev_day_dusk': prevday_stagazing_begin_unix,
+        'curr_day_dawn': morning_stagazing_ends_unix,
+        'curr_day_dusk': night_stagazing_begins_unix,
+        'next_day_dawn': nxtday_stagazing_ends_unix,
+        'next_day_dusk': nxtday_stagazing_begin_unix
     }
 
-    # print("sg Start @:",morning_stagazing_ends_unix)
-    # print("sg end   @:",night_stagazing_begins_unix)
+    # print('sg Start @:',morning_stagazing_ends_unix)
+    # print('sg end   @:',night_stagazing_begins_unix)
 
     return darkness_times
 
@@ -82,15 +82,15 @@ def set_time_to_dark(darkness_times, curr_time_unix):
     # depending on the time zone of user, the darkness times may be given for the following day.
     # This might be fixed by using user time zone from location, or passing TZ from client
     if curr_time_unix <= darkness_times["prev_day_dusk"]:
-        return darkness_times["prev_day_dusk"]  # if before sunset, adjust time to after
-    elif curr_time_unix <= darkness_times["curr_day_dawn"]:
+        return darkness_times['prev_day_dusk']  # if before sunset, adjust time to after
+    elif curr_time_unix <= darkness_times['curr_day_dawn']:
         return curr_time_unix  # After Sunset, Before Sunrise
-    elif curr_time_unix <= darkness_times["curr_day_dusk"]:
-        return darkness_times["curr_day_dusk"]  # if before sunset, adjust time to after
-    elif curr_time_unix <= darkness_times["next_day_dawn"]:
+    elif curr_time_unix <= darkness_times['curr_day_dusk']:
+        return darkness_times['curr_day_dusk']  # if before sunset, adjust time to after
+    elif curr_time_unix <= darkness_times['next_day_dawn']:
         return curr_time_unix  # After Sunset, Before Sunrise
-    elif curr_time_unix <= darkness_times["next_day_dusk"]:
-        return darkness_times["next_day_dusk"]
+    elif curr_time_unix <= darkness_times['next_day_dusk']:
+        return darkness_times['next_day_dusk']
     else:
         raise Exception("set_time_to_dark: Time selected outside bounds")
 
@@ -119,11 +119,11 @@ def get_weather_at_time(lat_selected, lon_selected, time=None):
     moon_phase = weather_data['daily']['data'][0]['moonPhase']  # 0 tells to grab todays phase. allows 0-7 for phases over next week
 
     return {
-        "precipProb": precip_prob,
-        "humidity": humidity,
-        "visibility": visibility,
-        "cloudCover": cloud_cover,
-        "moonPhase": moon_phase,
+        'precipProb': precip_prob,
+        'humidity': humidity,
+        'visibility': visibility,
+        'cloudCover': cloud_cover,
+        'moonPhase': moon_phase,
     }
 
 
@@ -149,11 +149,11 @@ def get_location_data(lat_origin, lon_origin, lat_selected, lon_selected):
         distance_value = 'N/A'
 
     location_data = {
-        "elevation": elev_data['results'][0]['elevation'],
-        "duration_text": duration_text,
-        "duration_value": duration_value,
-        "distance_text": distance_text,
-        "distance_value": distance_value,
+        'elevation': elev_data['results'][0]['elevation'],
+        'duration_text': duration_text,
+        'duration_value': duration_value,
+        'distance_text': distance_text,
+        'distance_value': distance_value,
     }
 
     return location_data
@@ -227,9 +227,9 @@ def get_stargaze_report(lat_org, lon_org, lat_starsite, lon_starsite, time=None)
         time = curr_time
     # If it is not dark at 'time', then set time to once it gets dark
 
-    if darkness_times["sun_status"] == "Midnight Sun":
-        return {"status": "One cannot stargaze in the land of the midnight sun. Try going closer to the equator!"}
-    elif darkness_times["sun_status"] == "Polar Night":
+    if darkness_times['sun_status'] == 'Midnight Sun':
+        return {'status': "One cannot stargaze in the land of the midnight sun. Try going closer to the equator!"}
+    elif darkness_times['sun_status'] == 'Polar Night':
         time = curr_time
     else:
         # TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
@@ -237,10 +237,10 @@ def get_stargaze_report(lat_org, lon_org, lat_starsite, lon_starsite, time=None)
 
     weather_data = get_weather_at_time(lat_starsite, lon_starsite, time)
 
-    precip_prob = weather_data["precipProb"]
-    humidity = weather_data["humidity"]
-    cloud_cover = weather_data["cloudCover"]
-    lunar_phase = weather_data["moonPhase"]
+    precip_prob = weather_data['precipProb']
+    humidity = weather_data['humidity']
+    cloud_cover = weather_data['cloudCover']
+    lunar_phase = weather_data['moonPhase']
     light_pol = apis.light_pollution(float(lat_starsite), float(lon_starsite))
     site_quality = calculate_rating(precip_prob, humidity, cloud_cover, light_pol)
     site_quality_discript = site_rating_desciption(site_quality)
@@ -252,15 +252,15 @@ def get_stargaze_report(lat_org, lon_org, lat_starsite, lon_starsite, time=None)
         cds_chart = None
 
     site_data = {
-        "status": "Success!",
-        "siteQuality": site_quality,
-        "siteQualityDiscript": site_quality_discript,
-        "precipProb": precip_prob,
-        "humidity": humidity,
-        "cloudCover": cloud_cover,
-        "lightPol": light_pol,
-        "lunarphase": lunar_phase,
-        "CDSChart": cds_chart
+        'status': "Success!",
+        'siteQuality': site_quality,
+        'siteQualityDiscript': site_quality_discript,
+        'precipProb': precip_prob,
+        'humidity': humidity,
+        'cloudCover': cloud_cover,
+        'lightPol': light_pol,
+        'lunarphase': lunar_phase,
+        'CDSChart': cds_chart
     }
 
     location_data = get_location_data(lat_org, lon_org, lat_starsite, lon_starsite)

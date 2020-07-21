@@ -2,11 +2,11 @@ import os
 import requests
 
 from helpers import (
-    convert_unix_to_YMD
+    convertUnixToYMDFormat
 )
 
 
-from light_pollution import get_light_pollution
+from light_pollution import getLightPollution
 from nearest_csc import nearest_csc
 
 DARKSKY_API_KEY = os.environ.get('DARKSKY_API_KEY', '')
@@ -41,8 +41,8 @@ def gmaps_elevation(lat_selected, lon_selected):
         raise Exception("Missing API Key for Google Maps")
 
     elev_params = {
-        "locations": str(lat_selected)+","+str(lon_selected),
-        "key": G_MAPS_API_KEY
+        'locations': str(lat_selected)+","+str(lon_selected),
+        'key': G_MAPS_API_KEY
     }
 
     elev_request = requests.get(GMAPS_ELEV_URL, params=elev_params)
@@ -60,9 +60,9 @@ def gmaps_distance(lat_origin, lon_origin, lat_selected, lon_selected):
         raise Exception("Missing API Key for Google Maps")
 
     dist_params = {
-        "origins": str(lat_origin)+","+str(lon_origin),
-        "destinations": str(lat_selected)+","+str(lon_selected),
-        "key": G_MAPS_API_KEY
+        'origins': str(lat_origin)+","+str(lon_origin),
+        'destinations': str(lat_selected)+","+str(lon_selected),
+        'key': G_MAPS_API_KEY
     }
 
     dist_request = requests.get(GMAPS_DIST_URL, params=dist_params)
@@ -77,10 +77,10 @@ def sunrise_sunset_time(lat_selected, lon_selected, time):
     returns: json response with driving distance (meters) and time (seconds)
     """
     params = {
-        "lat": lat_selected,
-        "lng": lon_selected,
-        "formatted": 0,
-        "date": str(convert_unix_to_YMD(time)) if time else "",
+        'lat': lat_selected,
+        'lng': lon_selected,
+        'formatted': 0,
+        'date': str(convertUnixToYMDFormat(time)) if time else "",
     }
 
     # TODO: Currently only returns darkness times for today, must work for next 48 hours
@@ -95,7 +95,7 @@ def light_pollution(lat_starsite, lon_starsite):
     args: lat/lon for stargazing site selcted
     returns: json response with light pollution levels (additional brightness ratio)
     """
-    return get_light_pollution(float(lat_starsite), float(lon_starsite))
+    return getLightPollution(float(lat_starsite), float(lon_starsite))
 
 
 def nearest_csc(lat_starsite, lon_starsite):

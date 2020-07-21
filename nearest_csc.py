@@ -1,6 +1,7 @@
 import json
 import math
 import os
+
 PATH = "csc_data"
 FILENAME = "csc_sites.json"
 MAX_DIST_KM = 100
