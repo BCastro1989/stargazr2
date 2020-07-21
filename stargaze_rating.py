@@ -103,20 +103,20 @@ def get_weather_at_time(lat_selected, lon_selected, time=None):
     """
     # TODO: ONLY get data we need from API requests? Would be faster but requires
     # a lot more params in url request used. Probably worth it in the long run
-    weatherdata = apis.dark_sky(lat_selected, lon_selected, time)
+    weather_data = apis.dark_sky(lat_selected, lon_selected, time)
 
-    # debug.test_DS_api(weatherdata)
+    # debug.test_DS_api(weather_data)
 
     # NOTE Hourly forcast data is only availible for next 48 hours
     # If more than 48 hours ahead, only have daily weather, so just assume it applies at night
 
-    # TODO The response from weatherdata is slightly different if looking at future weather report!
+    # TODO The response from weather_data is slightly different if looking at future weather report!
     # Test responses at various future times, verify that below keys still exist and get correct values
-    precip_prob = weatherdata['currently']['precipProbability']
-    humidity = weatherdata['currently']['humidity']
-    visibility = weatherdata['currently']['visibility']
-    cloud_cover = weatherdata['currently']['cloudCover']
-    moon_phase = weatherdata['daily']['data'][0]['moonPhase']  # 0 tells to grab todays phase. allows 0-7 for phases over next week
+    precip_prob = weather_data['currently']['precipProbability']
+    humidity = weather_data['currently']['humidity']
+    visibility = weather_data['currently']['visibility']
+    cloud_cover = weather_data['currently']['cloudCover']
+    moon_phase = weather_data['daily']['data'][0]['moonPhase']  # 0 tells to grab todays phase. allows 0-7 for phases over next week
 
     return {
         "precipProb": precip_prob,
@@ -235,12 +235,12 @@ def get_stargaze_report(lat_org, lon_org, lat_starsite, lon_starsite, time=None)
         # TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
         time = set_time_to_dark(darkness_times, time)
 
-    weatherData = get_weather_at_time(lat_starsite, lon_starsite, time)
+    weather_data = get_weather_at_time(lat_starsite, lon_starsite, time)
 
-    precip_prob = weatherData["precipProb"]
-    humidity = weatherData["humidity"]
-    cloud_cover = weatherData["cloudCover"]
-    lunar_phase = weatherData["moonPhase"]
+    precip_prob = weather_data["precipProb"]
+    humidity = weather_data["humidity"]
+    cloud_cover = weather_data["cloudCover"]
+    lunar_phase = weather_data["moonPhase"]
     light_pol = apis.light_pollution(float(lat_starsite), float(lon_starsite))
     site_quality = calculate_rating(precip_prob, humidity, cloud_cover, light_pol)
     site_quality_discript = site_rating_desciption(site_quality)
@@ -251,7 +251,7 @@ def get_stargaze_report(lat_org, lon_org, lat_starsite, lon_starsite, time=None)
     else:
         cds_chart = None
 
-    siteData = {
+    site_data = {
         "status": "Success!",
         "siteQuality": site_quality,
         "siteQualityDiscript": site_quality_discript,
@@ -264,9 +264,9 @@ def get_stargaze_report(lat_org, lon_org, lat_starsite, lon_starsite, time=None)
     }
 
     location_data = get_location_data(lat_org, lon_org, lat_starsite, lon_starsite)
-    siteData.update(location_data)
+    site_data.update(location_data)
 
-    return json.dumps(siteData)
+    return json.dumps(site_data)
 
 
 def test():
