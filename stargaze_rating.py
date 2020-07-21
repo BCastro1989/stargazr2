@@ -141,6 +141,20 @@ def get_driving_distance(lat_origin, lng_origin, lat_selected, lng_selected):
     return driving_distance
 
 
+def get_CS_chart(lat_selected, lng_selected, curr_time, stargazing_time):
+    """Call API Handler for Clear Sky Chart, process input and response
+
+    args: lat/lng for stargazing site, time
+    returns: dictionary with distance in time and space, in km and human readable
+    """
+    if stargazing_time < curr_time + SECONDS_IN_DAY:
+        cs_chart = apis.nearest_csc(float(lat_selected), float(lng_selected))
+    else:
+        cs_chart = {'status': "Error: CSC Reports only availible for next 24 hours!"}
+
+    return cs_chart
+
+
 def get_site_elevation(lat, lng):
     """Gets the elevation at the given coordinates.
 
@@ -246,12 +260,7 @@ def get_stargaze_report(lat_selected, lng_selected, lat_org=None, lng_org=None, 
     site_quality_discript = site_rating_desciption(site_quality)
 
     driving_distance = get_driving_distance(lat_org, lng_org, lat_selected, lng_selected)
-
-    # Only get CDS chart if requested time is within 24 hours
-    if stargazing_time < curr_time + SECONDS_IN_DAY:
-        cds_chart = apis.nearest_csc(float(lat_selected), float(lng_selected))
-    else:
-        cds_chart = None
+    cs_chart = get_CS_chart(lat_selected, lng_selected, curr_time, stargazing_time)
 
     site_data = {
         'status': "Success!",
@@ -264,7 +273,7 @@ def get_stargaze_report(lat_selected, lng_selected, lat_org=None, lng_org=None, 
         'elevation': elevation,
         'lunarphase': lunar_phase,
         'drivingDistance': driving_distance,
-        'CDSChart': cds_chart
+        'CDSChart': cs_chart
     }
     return json.dumps(site_data)
 
