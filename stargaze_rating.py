@@ -246,6 +246,7 @@ def get_stargaze_report(lat_org, lng_org, lat_selected, lng_selected, stargazing
     lunar_phase = weather_data['moonPhase']
     elevation = get_site_elevation(lat_selected, lng_selected)
     light_pol = apis.light_pollution(float(lat_selected), float(lng_selected))
+    # TODO Allow users with no entered location to lookup stargazing reports(drop driving distance request)
     driving_distance = get_driving_distance(lat_org, lng_org, lat_selected, lng_selected)
     site_quality = calculate_rating(precip_prob, humidity, cloud_cover, light_pol)
     site_quality_discript = site_rating_desciption(site_quality)
@@ -276,7 +277,7 @@ def get_stargaze_report(lat_org, lng_org, lat_selected, lng_selected, stargazing
 def test():
     time = get_current_unix_time()
 
-    # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, no time param
+    # Test stargazing using SaTODO Allow users with no entered location to lookup stargazing reports (drop driving distance request)n Francisco as user location, Pt Reyes at stargazing site, no time param
     result = get_stargaze_report(37.7360512, -122.4997348, 38.116947, -122.925357)
     print("********** SF-Pt. Reyes TEST w/o time **********")
     print(result, "\n")

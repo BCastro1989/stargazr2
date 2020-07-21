@@ -10,7 +10,9 @@
 # Improvements to Code Quality/Standards
 # [✓] Lint/Check for PEP-8
 # [✓] Isolate API calls in seperate functions
+# [ ] Proper Unit Tests, perhaps even with CI/CD setup
 # [ ] Have 3 API endpoints: Stargazing, Driving Distance, CSC (Later: ISS, Planets, Meisser, etc)
+
 
 # ToDo Tweaks/Optomize
 # [✓] get_darkness_times
@@ -37,3 +39,4 @@
     # P4 [ ] TODO Equation can also factor in "elevation" and "visibility" but currently does not
 # [ ] get_stargaze_report
     # P3 [ ] TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
+    # P1 [ ] TODO Allow users with no entered location to lookup stargazing reports (drop driving distance request)
