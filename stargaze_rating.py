@@ -18,6 +18,7 @@ from helpers import (
 
 import apis as apis
 
+SECONDS_IN_DAY = 86400
 
 def get_darkness_times(lat_selected, lng_selected, time):
     """Get times of day's darkness start/stop as unix time
@@ -44,9 +45,9 @@ def get_darkness_times(lat_selected, lng_selected, time):
 
     # Approximations of times following days. Looses accuracy at very high latitudes near equinox
     # Needed for TZ offsets since API always uses UTC, the times returned may be wrong day
-    prevday_stagazing_begin_unix = night_stagazing_begins_unix - 86400
-    nxtday_stagazing_ends_unix = morning_stagazing_ends_unix + 86400
-    nxtday_stagazing_begin_unix = night_stagazing_begins_unix + 86400
+    prevday_stagazing_begin_unix = night_stagazing_begins_unix - SECONDS_IN_DAY
+    nxtday_stagazing_ends_unix = morning_stagazing_ends_unix + SECONDS_IN_DAY
+    nxtday_stagazing_begin_unix = night_stagazing_begins_unix + SECONDS_IN_DAY
 
     darkness_times = {
         'sun_status': 'Normal',
@@ -72,8 +73,8 @@ def set_time_to_dark(darkness_times, curr_time_unix):
     args: Unix times for current time, darkness start/end time
     returns: Boolean
     """
-    # Must consider several cases because sunrise-sunset API assumes all times are UTC, such that
-    # depending on the time zone of user, the darkness times may be given for the following day.
+    # Must consider several cases because sunrise-sunset API processes all times as UTC, such that
+    # depending on the time zone of user, the darkness times returned may be given for the following day.
     # This might be fixed by using user time zone from location, or passing TZ from client
     if curr_time_unix <= darkness_times["prev_day_dusk"]:
         return darkness_times['prev_day_dusk']  # if before sunset, adjust time to after
@@ -191,6 +192,8 @@ def calculate_rating(precipProbability, humidity, cloudCover, lightPol):
     # TODO Equation for calulcating the rating needs some work.
     # 7 percent cloud cover and otherwise perfect conditions should not be a rating of 77, Fair.
 
+    # TODO This can also factor in "elevation" and "visibility" but currently does not
+
     # Rate quality based on each parameter
     precip_quality = (1 - math.sqrt(precipProbability))
     humid_quality = (math.pow(-humidity + 1, (1/3)))
@@ -223,6 +226,10 @@ def get_stargaze_report(lat_org, lng_org, lat_selected, lng_selected, stargazing
     if not stargazing_time:
         stargazing_time = curr_time
 
+    # Disallow requests for stargazing more than 8 days in future
+    if stargazing_time > curr_time + SECONDS_IN_DAY * 8:
+        return {'status': "Reports are only availible for the next week"}
+
     # Determine what times it gets dark on a given day, if it is not dark at requested stargazing time, set time to once it gets dark
     # Account for 24+ hr long days and nights in the arctice and anarctice
     darkness_times = get_darkness_times(lat_selected, lng_selected, stargazing_time)
@@ -247,7 +254,7 @@ def get_stargaze_report(lat_org, lng_org, lat_selected, lng_selected, stargazing
     site_quality_discript = site_rating_desciption(site_quality)
 
     # Only get CDS chart if requested time is within 24 hours
-    if stargazing_time < curr_time + 86000:
+    if stargazing_time < curr_time + SECONDS_IN_DAY:
         cds_chart = apis.nearest_csc(float(lat_selected), float(lng_selected))
     else:
         cds_chart = None
@@ -278,20 +285,21 @@ def test():
     print(result, "\n")
 
     # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 12 hr
-    result = get_stargaze_report(37.7360512, -122.4997348, 39.580110, -122.524105, time + 43000)
+    result = get_stargaze_report(37.7360512, -122.4997348, 39.580110, -122.524105, time + SECONDS_IN_DAY/2)
     print("********** SF-Stony Gorge w/ time **********")
     print(result, "\n")
 
     # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, time is in 24 hr
-    result = get_stargaze_report(37.7360512, -122.4997348, 38.116947, -122.925357, time + 86000)
+    result = get_stargaze_report(37.7360512, -122.4997348, 38.116947, -122.925357, time + SECONDS_IN_DAY)
     print("********** SF-Pt. Reyes w/ time **********")
     print(result, "\n")
 
     # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 36 hr
-    result = get_stargaze_report(37.7360512, -122.4997348, 39.580110, -122.524105, time + 129000)
+    result = get_stargaze_report(37.7360512, -122.4997348, 39.580110, -122.524105, time + SECONDS_IN_DAY*1.5)
     print("********** SF-Stony Gorge w/ time **********")
     print(result, "\n")
-    return
+
+
 
 
 if __name__ == "__main__":
