@@ -1,0 +1,42 @@
+
+# Features this API could use
+# P0: [✓] No stargazing reports during the day
+# P1: [✓] URL for img of nearest CLEAR SKY Chart, none if > 100 miles, display distance to site + name?
+# P2: [✓] Allow user to specify what time to check
+# P3: [ ] TIME of Next ISS overpass + visibility, az/alt
+# P4: [ ] Any planets visible, where (specific + rough locations - i.e. az/art and general direction and height)
+# P4: [ ] Key Meisser Objects, and other popular deep sky objects
+
+# Improvements to Code Quality/Standards
+# [✓] Lint/Check for PEP-8
+# [✓] Isolate API calls in seperate functions
+# [ ] Proper Unit Tests, perhaps even with CI/CD setup
+# [ ] Have 3 API endpoints: Stargazing, Driving Distance, CSC (Later: ISS, Planets, Meisser, etc)
+
+
+# ToDo Tweaks/Optomize
+# [✓] get_darkness_times
+    # P1: [✓] TODO: Currently only returns darkness times for today, must work for next 48 hours
+        # API accepts date paramter but in YYYY-MM-DD format, not unix time
+    # P2: [✓] TODO: These times may be meaningless above/below (An)arctic Circle.
+        # Check what API results are for arctic locations at different times of year
+        # If Midnight Sun, tell user no stargazing possible :(
+        # If Polar Night, they can stargaze whenever they want! :)
+    # P1: [✓] TODO: I just found out the times here dont explicitly account for Daylight Savings.
+        # This may or may not be an issue...
+# [ ] get_weather_at_time
+    # P3: [ ] TODO: ONLY get data we need from API requests? Would be faster but requires
+        # a lot more params in url request used. Probably worth it in the long run
+    # P1: [✓] TODO The response from weatherdata is slightly different if looking at future weather report!
+        # Test responses at various future times, verify that below keys still exist and get correct values
+# [✓] getCDSChart
+    # P3 TODO: Use more accurate distance model/equation
+# [✓] get_location_data
+    # P2 [✓] TODO: Distance and elevation calls should probably be two methods
+    # P0 [✓?] TODO: Both GMaps API calls VERY slow... why?
+# [ ] calculate_rating
+    # P4 [ ] TODO Equation for calulcating the rating needs some work.
+    # P4 [ ] TODO Equation can also factor in "elevation" and "visibility" but currently does not
+# [ ] get_stargaze_report
+    # P3 [ ] TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
+    # P1 [ ] TODO Allow users with no entered location to lookup stargazing reports (drop driving distance request)
