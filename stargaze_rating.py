@@ -21,7 +21,10 @@ import apis as apis
 SECONDS_IN_DAY = 86400
 
 def get_darkness_times(lat_selected, lng_selected, time):
-    """Get times of day's darkness start/stop as unix time
+    """Call API Handler for sunrise/sunset, process input and response. 
+
+    Uses sunset/rise times to calculate what times it is dark enough to stargaze
+    on current day. Estimates times for following and previous days.
 
     args: String representing lat/lng coords
     returns: Int of 10-digit Unix Time (integer seconds)
@@ -91,7 +94,7 @@ def set_time_to_dark(darkness_times, curr_time_unix):
 
 
 def get_weather_at_time(lat_selected, lng_selected, time=None):
-    """Gets Weather report for location and time specified.
+    """Call API Handler for CSC Chart, process input and response
 
     args: lat/lng and time for stargazing site
     returns: dictionary with just the weather data we're interested in
@@ -116,27 +119,29 @@ def get_weather_at_time(lat_selected, lng_selected, time=None):
 
 
 def get_driving_distance(lat_origin, lng_origin, lat_selected, lng_selected):
-    """Gets approx driving distance and trip time to the given coordinates.
+    """Call API Handler for GMaps Distance Matrix, process input and response
+
+    Gets driving distance and trip time to the given coordinates from user origin
 
     args: lat/lng for origin and stargazing site selcted
     returns: dictionary with distance in time and space, in km and human readable
     """
 
     if lat_origin is None:
-        return {"status": "Error: No start location specified"}
+        return {'status': "Error: No start location specified"}
 
     dist_data = apis.gmaps_distance(lat_origin, lng_origin, lat_selected, lng_selected)
 
     if 'duration' in dist_data['rows'][0]['elements'][0]:
         driving_distance = {
-            "status": "Sucess",
+            'status': "Sucess",
             'duration_text': dist_data['rows'][0]['elements'][0]['duration']['text'],
             'duration_value': dist_data['rows'][0]['elements'][0]['duration']['value'],
             'distance_text': dist_data['rows'][0]['elements'][0]['distance']['text'],
             'distance_value': dist_data['rows'][0]['elements'][0]['distance']['value'],
         }
     else:
-        driving_distance = {"status": "Error: No route found to destination"}
+        driving_distance = {'status': "Error: No route found to destination"}
 
     return driving_distance
 
@@ -156,7 +161,7 @@ def get_CS_chart(lat_selected, lng_selected, curr_time, stargazing_time):
 
 
 def get_site_elevation(lat, lng):
-    """Gets the elevation at the given coordinates.
+    """Call API Handler for GMaps Elevation, process input and response
 
     args: lat/lng for stargazing site selcted
     returns: dictionary with elevation, distance in meters
@@ -189,7 +194,7 @@ def site_rating_desciption(site_quality):
 
 
 def calculate_rating(precipProbability, humidity, cloudCover, lightPol):
-    """ Calculate the stargazing quality based off weather, light pollution, etc.
+    """Calculate the stargazing quality based off weather, light pollution, etc.
 
     args: site statistics, light pollution
     returns: Double rating from 0 - 100, -1 for err
