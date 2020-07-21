@@ -6,8 +6,11 @@ FILENAME = "csc_sites.json"
 MAX_DIST_KM = 100
 
 
-def lat_lng_distance_in_km(lat1, lng1, lat2, lng2):
+def calc_great_circle_distance(lat1, lng1, lat2, lng2):
     """Calculate distance between two latitude-longitide points on sphere in kilometres.
+
+    Assuming the Earth as a perfect sphere of radius 6371 km, calculate the distances between
+    two latitude and longitutde coordinates on the Earth. Fairly accurate for distances under 100km.
 
     args: Float lat/lng for two points on Earth
     returns: Float representing distance in kilometres
@@ -27,7 +30,7 @@ def lat_lng_distance_in_km(lat1, lng1, lat2, lng2):
     return round(d, 1)  # Assume Accurate within ~0.1km due to Idealized Sphere Earth
 
 
-def nearest_csc(lat, lng):
+def get_nearest_csc(lat, lng):
     """Nearest Clear Sky Chart from A. Danko's site: https://www.cleardarksky.com/
 
     All 5000+ sities are binned by 1x1 degree lat/lng. Only check the
@@ -64,7 +67,7 @@ def nearest_csc(lat, lng):
 
         # Find the closest site in Clear Dark Sky database within bins
         for site in nearby_csc:
-            dist = lat_lng_distance_in_km(lat, lng, site["lat"], site["lon"])
+            dist = calc_great_circle_distance(lat, lng, site["lat"], site["lon"])
 
             if dist < curr_closest_km:
                 curr_closest_km = dist

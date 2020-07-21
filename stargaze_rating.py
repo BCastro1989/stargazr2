@@ -1,22 +1,5 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
-from datetime import datetime as dt
-from flask import Flask
-
-from helpers import (
-    getCurrentUnixTime,
-    convertYMDHStoUnixFormat
-)
-
-from apis import (
-    dark_sky_api,
-    gmaps_distance_api,
-    gmaps_elevation_api,
-    sunrise_sunset_time_api,
-    light_pollution_api,
-    nearest_csc_api
-)
-
 import debug
 import json
 import math
@@ -25,22 +8,41 @@ import pprint
 import requests
 import time as t
 
+from datetime import datetime as dt
+from flask import Flask
 
-def getDarknessTimes(lat_selected, lon_selected, time):
+from helpers import (
+    get_current_unix_time,
+    convert_YMDHMS_to_unix
+)
+
+# from apis import (
+#     dark_sky,
+#     gmaps_distance,
+#     gmaps_elevation,
+#     sunrise_sunset_time,
+#     light_pollution,
+#     nearest_csc
+# )
+
+import apis as apis
+
+
+def get_darkness_times(lat_selected, lon_selected, time):
     """Get times of day's darkness start/stop as unix time
 
     args: String representing lat/lon coords
     returns: Int of 10-digit Unix Time (integer seconds)
     """
-    sunset_data = sunrise_sunset_time_api(lat_selected, lon_selected, time)
+    sunset_data = apis.sunrise_sunset_time(lat_selected, lon_selected, time)
 
     # start of astronomical twilight is good enough to begin stargazing
     # Nautical Twilight End = Start of Astronomical Twilight and vice-versa
     morning_stagazing_ends = sunset_data['results']['nautical_twilight_begin']
     night_stagazing_begins = sunset_data['results']['nautical_twilight_end']
 
-    morning_stagazing_ends_unix = convertYMDHStoUnixFormat(morning_stagazing_ends)
-    night_stagazing_begins_unix = convertYMDHStoUnixFormat(night_stagazing_begins)
+    morning_stagazing_ends_unix = convert_YMDHMS_to_unix(morning_stagazing_ends)
+    night_stagazing_begins_unix = convert_YMDHMS_to_unix(night_stagazing_begins)
 
     # Midnight Sun, never dark
     if morning_stagazing_ends_unix == 1 or morning_stagazing_ends_unix == 1:
@@ -70,7 +72,7 @@ def getDarknessTimes(lat_selected, lon_selected, time):
     return darkness_times
 
 
-def setTimeToDark(darkness_times, curr_time_unix):
+def set_time_to_dark(darkness_times, curr_time_unix):
     """Sets Time for requests to once it is dark
 
     Checks if it is currently dark enough for stargazing,
@@ -83,7 +85,7 @@ def setTimeToDark(darkness_times, curr_time_unix):
     returns: Boolean
     """
     # pretty print(for debugging)
-    # debug.ppWhenInDayNightCycle(darkness_times, curr_time_unix)
+    # debug.pp_when_in_day_night_cycle(darkness_times, curr_time_unix)
 
     # Must consider several cases because sunrise-sunset API assumes all times are UTC, such that
     # depending on the time zone of user, the darkness times may be given for the following day.
@@ -99,10 +101,10 @@ def setTimeToDark(darkness_times, curr_time_unix):
     elif curr_time_unix <= darkness_times["next_day_dusk"]:
         return darkness_times["next_day_dusk"]
     else:
-        raise Exception("setTimeToDark: Time selected outside bounds")
+        raise Exception("set_time_to_dark: Time selected outside bounds")
 
 
-def getWeatherAtTime(lat_selected, lon_selected, time=None):
+def get_weather_at_time(lat_selected, lon_selected, time=None):
     """Gets Weather report for location and time specified.
 
     args: lat/lon and time for stargazing site
@@ -110,9 +112,9 @@ def getWeatherAtTime(lat_selected, lon_selected, time=None):
     """
     # TODO: ONLY get data we need from API requests? Would be faster but requires
     # a lot more params in url request used. Probably worth it in the long run
-    weatherdata = dark_sky_api(lat_selected, lon_selected, time)
+    weatherdata = apis.dark_sky(lat_selected, lon_selected, time)
 
-    # debug.testDSAPI(weatherdata)
+    # debug.test_DS_api(weatherdata)
 
     # NOTE Hourly forcast data is only availible for next 48 hours
     # If more than 48 hours ahead, only have daily weather, so just assume it applies at night
@@ -134,15 +136,15 @@ def getWeatherAtTime(lat_selected, lon_selected, time=None):
     }
 
 
-def getLocationData(lat_origin, lon_origin, lat_selected, lon_selected):
+def get_location_data(lat_origin, lon_origin, lat_selected, lon_selected):
     """Gets the elevation and distance to the given coordinates.
 
     args: lat/lon for origin and stargazing site selcted
     returns: dictionary with elevation, distance in time and space, simple units and human readable
     """
 
-    dist_data = gmaps_distance_api(lat_origin, lon_origin, lat_selected, lon_selected)
-    elev_data = gmaps_elevation_api(lat_selected, lon_selected)
+    dist_data = apis.gmaps_distance(lat_origin, lon_origin, lat_selected, lon_selected)
+    elev_data = apis.gmaps_elevation(lat_selected, lon_selected)
 
     if 'duration' in dist_data['rows'][0]['elements'][0]:
         duration_text = dist_data['rows'][0]['elements'][0]['duration']['text']
@@ -166,7 +168,7 @@ def getLocationData(lat_origin, lon_origin, lat_selected, lon_selected):
     return location_data
 
 
-def siteRatingDescipt(site_quality):
+def site_rating_desciption(site_quality):
     """Describe the site based off it's rating.
 
     args: Site quality 0-100
@@ -189,7 +191,7 @@ def siteRatingDescipt(site_quality):
     return site_quality_discript
 
 
-def calculateRating(precipProbability, humidity, cloudCover, lightPol):
+def calculate_rating(precipProbability, humidity, cloudCover, lightPol):
     """ Calculate the stargazing quality based off weather, light pollution, etc.
 
     args: site statistics, light pollution
@@ -215,8 +217,7 @@ def calculateRating(precipProbability, humidity, cloudCover, lightPol):
 
 
 # TODO: CleanUp/Refactor
-@app.route("/stargazr")
-def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
+def get_stargaze_report(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
     """get stargazing report based on given coordinates.
 
     args:
@@ -226,9 +227,9 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
 
     returns: dictionary with data needed for API response/display in front end
     """
-    darkness_times = getDarknessTimes(lat_starsite, lon_starsite, time)
+    darkness_times = get_darkness_times(lat_starsite, lon_starsite, time)
 
-    curr_time = getCurrentUnixTime()
+    curr_time = get_current_unix_time()
 
     # If no time is given, first set time to current time.
     if not time:
@@ -241,21 +242,21 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
         time = curr_time
     else:
         # TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
-        time = setTimeToDark(darkness_times, time)
+        time = set_time_to_dark(darkness_times, time)
 
-    weatherData = getWeatherAtTime(lat_starsite, lon_starsite, time)
+    weatherData = get_weather_at_time(lat_starsite, lon_starsite, time)
 
     precip_prob = weatherData["precipProb"]
     humidity = weatherData["humidity"]
     cloud_cover = weatherData["cloudCover"]
     lunar_phase = weatherData["moonPhase"]
-    light_pol = light_pollution_api(float(lat_starsite), float(lon_starsite))
-    site_quality = calculateRating(precip_prob, humidity, cloud_cover, light_pol)
-    site_quality_discript = siteRatingDescipt(site_quality)
+    light_pol = apis.light_pollution(float(lat_starsite), float(lon_starsite))
+    site_quality = calculate_rating(precip_prob, humidity, cloud_cover, light_pol)
+    site_quality_discript = site_rating_desciption(site_quality)
 
     # Only get CDS chart if time is within 24 hours
     if time < curr_time + 86000:
-        cds_chart = nearest_csc_api(float(lat_starsite), float(lon_starsite))
+        cds_chart = apis.nearest_csc(float(lat_starsite), float(lon_starsite))
     else:
         cds_chart = None
 
@@ -271,33 +272,32 @@ def getStargazeReport(lat_org, lon_org, lat_starsite, lon_starsite, time=None):
         "CDSChart": cds_chart
     }
 
-    location_data = getLocationData(lat_org, lon_org, lat_starsite, lon_starsite)
+    location_data = get_location_data(lat_org, lon_org, lat_starsite, lon_starsite)
     siteData.update(location_data)
 
     return json.dumps(siteData)
 
 
-@app.route("/test")
 def test():
-    time = getCurrentUnixTime()
+    time = get_current_unix_time()
 
     # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, no time param
-    result = getStargazeReport(37.7360512, -122.4997348, 38.116947, -122.925357)
+    result = get_stargaze_report(37.7360512, -122.4997348, 38.116947, -122.925357)
     print("********** SF-Pt. Reyes TEST w/o time **********")
     print(result, "\n")
 
     # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 12 hr
-    result = getStargazeReport(37.7360512, -122.4997348, 39.580110, -122.524105, time + 43000)
+    result = get_stargaze_report(37.7360512, -122.4997348, 39.580110, -122.524105, time + 43000)
     print("********** SF-Stony Gorge w/ time **********")
     print(result, "\n")
 
     # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, time is in 24 hr
-    result = getStargazeReport(37.7360512, -122.4997348, 38.116947, -122.925357, time + 86000)
+    result = get_stargaze_report(37.7360512, -122.4997348, 38.116947, -122.925357, time + 86000)
     print("********** SF-Pt. Reyes w/ time **********")
     print(result, "\n")
 
     # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 36 hr
-    result = getStargazeReport(37.7360512, -122.4997348, 39.580110, -122.524105, time + 129000)
+    result = get_stargaze_report(37.7360512, -122.4997348, 39.580110, -122.524105, time + 129000)
     print("********** SF-Stony Gorge w/ time **********")
     print(result, "\n")
     return

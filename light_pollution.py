@@ -72,7 +72,7 @@ pixel_lightpoll_table = {
 }
 
 
-def getLightPollution(lat, lon):
+def get_light_pollution(lat, lon):
     """Gets the Light Pollution level for the location chosen.
 
     args: lat/lon for stargazing site
@@ -129,35 +129,35 @@ def getLightPollution(lat, lon):
 
 # Test for LP accuracy using points fromm Downtown LA to Ocean
 if __name__ == "__main__":
-    getLightPollution(32.289454513392876, -120.41290283203125)
+    get_light_pollution(32.289454513392876, -120.41290283203125)
     print("1\tBlack   \t(0,0,0)           0.00 - 0.01   \n")
-    getLightPollution(32.939538898778416, -119.66583251953125)
+    get_light_pollution(32.939538898778416, -119.66583251953125)
     print("2\tDk Gray \t(35,35,35)        0.01 - 0.06   \n")
-    getLightPollution(33.06852769197118, -119.20989990234375)
+    get_light_pollution(33.06852769197118, -119.20989990234375)
     print("2\tLt Gray \t(70,70,70)        0.06 - 0.11   \n")
-    getLightPollution(33.23868752757414, -119.102783203125)
+    get_light_pollution(33.23868752757414, -119.102783203125)
     print("3\tDk Blue \t(0,0,153)        0.11 - 0.19\n")
-    getLightPollution(33.348884792201694, -118.98468017578125)
+    get_light_pollution(33.348884792201694, -118.98468017578125)
     print("3\tLt Blue \t(0,0,255)        0.19 - 0.33   \n")
-    getLightPollution(33.48414472606364, -118.88580322265625)
+    get_light_pollution(33.48414472606364, -118.88580322265625)
     print("4\tDk Green\t(0,153,0)       0.33 - 0.58   \n")
-    getLightPollution(33.55741786324217, -118.75396728515625)
+    get_light_pollution(33.55741786324217, -118.75396728515625)
     print("4\tMd Green\t(0,255,0)      0.58 - 1.00   \n")
-    getLightPollution(33.80653802509606, -118.81988525390625)
+    get_light_pollution(33.80653802509606, -118.81988525390625)
     print("4\tGreen   \t(191,191,0)      1.00 - 1.73   \n")
-    getLightPollution(33.868135032968624, -118.7567138671875)
+    get_light_pollution(33.868135032968624, -118.7567138671875)
     print("4\tYellow  \t(255,255,0)      1.73 - 3.00\n")
-    getLightPollution(33.96842016198477, -118.71551513671875)
+    get_light_pollution(33.96842016198477, -118.71551513671875)
     print("5\tDk Red  \t(217,109,0)       3.00 - 5.20   \n")
-    getLightPollution(34.05493499798558, -118.7017822265625)
+    get_light_pollution(34.05493499798558, -118.7017822265625)
     print("5\tOrange  \t(255,128,0)      5.20 - 9.00 \n")
-    getLightPollution(34.20953080048952, -118.7841796875)
+    get_light_pollution(34.20953080048952, -118.7841796875)
     print("6\tRed     \t(204,0,0)       9.00 - 15.59  \n")
-    getLightPollution(34.12317388304314, -118.53973388671875)
+    get_light_pollution(34.12317388304314, -118.53973388671875)
     print("7\tLt Red  \t(255,0,0)      15.59 - 27.00  \n")
-    getLightPollution(34.2004447595411, -118.53424072265625)
+    get_light_pollution(34.2004447595411, -118.53424072265625)
     print("8\tDk White\t(191,191,191)     27.0 - 46.77  \n")
-    getLightPollution(33.95247360616281, -118.223876953125)
+    get_light_pollution(33.95247360616281, -118.223876953125)
     print("9\tWhite   \t(255,255,255)     47.77+        \n")
 
     # Light Pollution Coloring Key

@@ -2,11 +2,11 @@ import os
 import requests
 
 from helpers import (
-    convertUnixToYMDFormat
+    convert_unix_to_YMD
 )
 
 
-from light_pollution import getLightPollution
+from light_pollution import get_light_pollution
 from nearest_csc import nearest_csc
 
 DARKSKY_API_KEY = os.environ.get('DARKSKY_API_KEY', '')
@@ -18,7 +18,7 @@ GMAPS_ELEV_URL = "https://maps.googleapis.com/maps/api/elevation/json"
 GMAPS_DIST_URL = "https://maps.googleapis.com/maps/api/distancematrix/json"
 
 
-def dark_sky_api(lat_selected, lon_selected, time):
+def dark_sky(lat_selected, lon_selected, time):
     """Gets Weather report for location and time specified using darksky api
 
     args: lat/lon and time for stargazing site
@@ -31,7 +31,7 @@ def dark_sky_api(lat_selected, lon_selected, time):
     return request.json()
 
 
-def gmaps_elevation_api(lat_selected, lon_selected):
+def gmaps_elevation(lat_selected, lon_selected):
     """Gets the elevation at given coordinates.
 
     args: lat/lon for stargazing site selcted
@@ -49,7 +49,7 @@ def gmaps_elevation_api(lat_selected, lon_selected):
     return elev_request.json()
 
 
-def gmaps_distance_api(lat_origin, lon_origin, lat_selected, lon_selected):
+def gmaps_distance(lat_origin, lon_origin, lat_selected, lon_selected):
     """Gets the distance between two sets of coords
 
     args: lat/lon for origin and stargazing site selcted
@@ -70,7 +70,7 @@ def gmaps_distance_api(lat_origin, lon_origin, lat_selected, lon_selected):
     return dist_request.json()
 
 
-def sunrise_sunset_time_api(lat_selected, lon_selected, time):
+def sunrise_sunset_time(lat_selected, lon_selected, time):
     """Gets the times the sun will rise/set, and reach "twilight" conditions sufficent for stargazing
 
     args: lat/lon for stargazing site selcted
@@ -80,7 +80,7 @@ def sunrise_sunset_time_api(lat_selected, lon_selected, time):
         "lat": lat_selected,
         "lng": lon_selected,
         "formatted": 0,
-        "date": str(convertUnixToYMDFormat(time)) if time else "",
+        "date": str(convert_unix_to_YMD(time)) if time else "",
     }
 
     # TODO: Currently only returns darkness times for today, must work for next 48 hours
@@ -89,16 +89,16 @@ def sunrise_sunset_time_api(lat_selected, lon_selected, time):
     return request.json()
 
 
-def light_pollution_api(lat_starsite, lon_starsite):
+def light_pollution(lat_starsite, lon_starsite):
     """Determines Light Pollution Levels. Internal API.
 
     args: lat/lon for stargazing site selcted
     returns: json response with light pollution levels (additional brightness ratio)
     """
-    return getLightPollution(float(lat_starsite), float(lon_starsite))
+    return get_light_pollution(float(lat_starsite), float(lon_starsite))
 
 
-def nearest_csc_api(lat_starsite, lon_starsite):
+def nearest_csc(lat_starsite, lon_starsite):
     """Gets nearest Clear Sky Chart. Internal API.
 
     args: lat/lon for stargazing site selcted

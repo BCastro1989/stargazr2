@@ -4,7 +4,7 @@ Various helper functions for debugging, pretty printing, etc
 """
 
 
-def testDSAPI(weatherdata):
+def test_DS_api(weatherdata):
     """DEBUG function for ensuring sucessful call to DarkSky Weather API.
 
     args: json weatherdata from DarkSky API
@@ -17,7 +17,7 @@ def testDSAPI(weatherdata):
         print("DARKSKY API RESPONSE SUCESS\n")
 
 
-def ppWhenInDayNightCycle(darkness_times, curr_time_unix):
+def pp_when_in_day_night_cycle(darkness_times, curr_time_unix):
     """Pretty prints current time in relation to darkness start/stop times
 
     args: unix timestamp for current time, morning darkness ends, night darkness begins
@@ -36,7 +36,7 @@ def ppWhenInDayNightCycle(darkness_times, curr_time_unix):
         print("%s: %s" % (key, value))
 
 
-def ppSiteRatingBreakdown(precipProbability, humidity, cloudCover, lightPol, precip_quality, humid_quality, cloud_quality, lightpol_quality, site_quality_rating):
+def pp_site_rating_breakdown(precipProbability, humidity, cloudCover, lightPol, precip_quality, humid_quality, cloud_quality, lightpol_quality, site_quality_rating):
     print("********* Site Rating Breakdown *********")
     print("precipProbability:", precipProbability, ">", str(round(precip_quality*100, 1))+"%")
     print("humidity:", humidity, ">", str(round(humid_quality*100, 1))+"%")

@@ -3,7 +3,7 @@ from datetime import datetime as dt
 import time as t
 
 
-def getCurrentUnixTime():
+def get_current_unix_time():
     """Get current time in UNIX format.
 
     args: none
@@ -12,7 +12,7 @@ def getCurrentUnixTime():
     return int(t.time())
 
 
-def convertUnixToYMDFormat(unixtime):
+def convert_unix_to_YMD(unixtime):
     """Convert time from unix epoch to Human Readable YYYY-MM-DD
 
     args: int representing unix time
@@ -21,7 +21,7 @@ def convertUnixToYMDFormat(unixtime):
     return dt.utcfromtimestamp(unixtime).strftime("%Y-%m-%d")
 
 
-def convertYMDHStoUnixFormat(timestamp):
+def convert_YMDHMS_to_unix(timestamp):
     """Convert time to unix epoch from human-readable YYYY-MM-DD-H-M-S.
     Assumes time is UTC, no time zones or DLS
 
