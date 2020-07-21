@@ -16,15 +16,6 @@ from helpers import (
     convert_YMDHMS_to_unix
 )
 
-# from apis import (
-#     dark_sky,
-#     gmaps_distance,
-#     gmaps_elevation,
-#     sunrise_sunset_time,
-#     light_pollution,
-#     nearest_csc
-# )
-
 import apis as apis
 
 
