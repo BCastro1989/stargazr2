@@ -62,7 +62,7 @@ def get_nearest_csc(lat, lng):
                                 nearby_csc.append(site)
         except:
             # API returns error
-            closest_site = {'status_msg': "ERROR parsing coordinates or reading from list of CSC sites"}
+            closest_site = {'status': "ERROR parsing coordinates or reading from list of CSC sites"}
 
         curr_closest_km = MAX_DIST_KM
 
@@ -76,13 +76,13 @@ def get_nearest_csc(lat, lng):
 
         # Grab site url and return site data if within 100 km
         if curr_closest_km < MAX_DIST_KM:
-            closest_site['status_msg'] = "SUCCESS"
+            closest_site['status'] = "SUCCESS"
             closest_site['dist_km'] = curr_closest_km
             closest_site['full_img'] = "https://www.cleardarksky.com/c/"+closest_site['id']+"csk.gif"
             closest_site['mini_img'] = "https://www.cleardarksky.com/c/"+closest_site['id']+"cs0.gif"
         else:
             closest_site = {
-                'status_msg': "No sites within 100 km. CSC sites are only available in the Continental US, Canada, and Northern Mexico"
+                'status': "No sites within 100 km. CSC sites are only available in the Continental US, Canada, and Northern Mexico"
             }
 
         return closest_site
