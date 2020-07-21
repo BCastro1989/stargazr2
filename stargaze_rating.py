@@ -127,7 +127,6 @@ def get_driving_distance(lat_origin, lng_origin, lat_selected, lng_selected):
     """
 
     dist_data = apis.gmaps_distance(lat_origin, lng_origin, lat_selected, lng_selected)
-    elev_data = apis.gmaps_elevation(lat_selected, lng_selected)
 
     if 'duration' in dist_data['rows'][0]['elements'][0]:
         duration_text = dist_data['rows'][0]['elements'][0]['duration']['text']
