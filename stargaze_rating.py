@@ -100,11 +100,6 @@ def get_weather_at_time(lat_selected, lng_selected, time=None):
     # a lot more params in url request used. Probably worth it in the long run
     weather_data = apis.dark_sky(lat_selected, lng_selected, time)
 
-    # NOTE Hourly forcast data is only availible for next 48 hours
-    # If more than 48 hours ahead, only have daily weather, so just assume it applies at night
-
-    # TODO The response from weather_data is slightly different if looking at future weather report!
-    # Test responses at various future times, verify that below keys still exist and get correct values
     precip_prob = weather_data['currently']['precipProbability']
     humidity = weather_data['currently']['humidity']
     visibility = weather_data['currently']['visibility']
@@ -300,8 +295,6 @@ def test():
     result = get_stargaze_report(37.7360512, -122.4997348, 39.580110, -122.524105, time + SECONDS_IN_DAY*1.5)
     print("********** SF-Stony Gorge w/ time **********")
     print(result, "\n")
-
-
 
 
 if __name__ == "__main__":
