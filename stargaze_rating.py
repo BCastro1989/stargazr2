@@ -139,14 +139,14 @@ def get_driving_distance(lat_origin, lng_origin, lat_selected, lng_selected):
         distance_text = 'N/A'
         distance_value = 'N/A'
 
-    location_data = {
+    driving_distance = {
         'duration_text': duration_text,
         'duration_value': duration_value,
         'distance_text': distance_text,
         'distance_value': distance_value,
     }
 
-    return location_data
+    return driving_distance
 
 
 def get_site_elevation(lat, lng):
@@ -242,7 +242,7 @@ def get_stargaze_report(lat_org, lng_org, lat_selected, lng_selected, stargazing
     lunar_phase = weather_data['moonPhase']
     elevation = get_site_elevation(lat_selected, lng_selected)
     light_pol = apis.light_pollution(float(lat_selected), float(lng_selected))
-    location_data = get_driving_distance(lat_org, lng_org, lat_selected, lng_selected)
+    driving_distance = get_driving_distance(lat_org, lng_org, lat_selected, lng_selected)
     site_quality = calculate_rating(precip_prob, humidity, cloud_cover, light_pol)
     site_quality_discript = site_rating_desciption(site_quality)
 
@@ -264,7 +264,7 @@ def get_stargaze_report(lat_org, lng_org, lat_selected, lng_selected, stargazing
         'lunarphase': lunar_phase,
         'CDSChart': cds_chart
     }
-    site_data.update(location_data)
+    site_data.update(driving_distance)
 
     return json.dumps(site_data)
 
