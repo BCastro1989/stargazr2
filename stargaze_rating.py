@@ -226,9 +226,11 @@ def get_stargaze_report(lat_org, lng_org, lat_selected, lng_selected, stargazing
     if not stargazing_time:
         stargazing_time = curr_time
 
-    # Disallow requests for stargazing more than 8 days in future
+    # Disallow requests for stargazing more than 8 days in future, or 1 day in past
     if stargazing_time > curr_time + SECONDS_IN_DAY * 8:
         return {'status': "Reports are only availible for the next week"}
+    if stargazing_time < curr_time - SECONDS_IN_DAY:
+        return {'status': "Reports for previous days not supported"}
 
     # Determine what times it gets dark on a given day, if it is not dark at requested stargazing time, set time to once it gets dark
     # Account for 24+ hr long days and nights in the arctice and anarctice
