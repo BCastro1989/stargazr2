@@ -6,8 +6,8 @@ from helpers import (
 )
 
 
-from light_pollution import getLightPollution
-from nearest_csc import nearest_csc
+from light_pollution import get_light_pollution
+from nearest_csc import get_nearest_csc
 
 DARKSKY_API_KEY = os.environ.get('DARKSKY_API_KEY', '')
 G_MAPS_API_KEY = os.environ.get('G_MAPS_API_KEY', '')
@@ -95,7 +95,7 @@ def light_pollution(lat_starsite, lon_starsite):
     args: lat/lon for stargazing site selcted
     returns: json response with light pollution levels (additional brightness ratio)
     """
-    return getLightPollution(float(lat_starsite), float(lon_starsite))
+    return get_light_pollution(float(lat_starsite), float(lon_starsite))
 
 
 def nearest_csc(lat_starsite, lon_starsite):
@@ -104,4 +104,4 @@ def nearest_csc(lat_starsite, lon_starsite):
     args: lat/lon for stargazing site selcted
     returns: json response with the nearest CSC.
     """
-    return nearest_csc(float(lat_starsite), float(lon_starsite))
+    return get_nearest_csc(float(lat_starsite), float(lon_starsite))
