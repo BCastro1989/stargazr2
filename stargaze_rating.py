@@ -208,7 +208,7 @@ def calculate_rating(precipProbability, humidity, cloudCover, lightPol):
 
 
 # TODO: CleanUp/Refactor
-def get_stargaze_report(lat_org, lng_org, lat_selected, lng_selected, time=None):
+def get_stargaze_report(lat_org, lng_org, lat_selected, lng_selected, stargazing_time=None):
     """get stargazing report based on given coordinates.
 
     args:
@@ -218,24 +218,23 @@ def get_stargaze_report(lat_org, lng_org, lat_selected, lng_selected, time=None)
 
     returns: dictionary with data needed for API response/display in front end
     """
-    darkness_times = get_darkness_times(lat_selected, lng_selected, time)
-
     curr_time = get_current_unix_time()
 
-    # If no time is given, first set time to current time.
-    if not time:
-        time = curr_time
-    # If it is not dark at 'time', then set time to once it gets dark
+    if not stargazing_time:
+        stargazing_time = curr_time
 
+    # Determine what times it gets dark on a given day, if it is not dark at requested stargazing time, set time to once it gets dark
+    # Account for 24+ hr long days and nights in the arctice and anarctice
+    darkness_times = get_darkness_times(lat_selected, lng_selected, stargazing_time)
     if darkness_times['sun_status'] == 'Midnight Sun':
         return {'status': "One cannot stargaze in the land of the midnight sun. Try going closer to the equator!"}
     elif darkness_times['sun_status'] == 'Polar Night':
-        time = curr_time
+        stargazing_time = curr_time
     else:
         # TODO User-facing message that time was changed to ___ (w/ TZ adjust!)
-        time = set_time_to_dark(darkness_times, time)
+        stargazing_time = set_time_to_dark(darkness_times, stargazing_time)
 
-    weather_data = get_weather_at_time(lat_selected, lng_selected, time)
+    weather_data = get_weather_at_time(lat_selected, lng_selected, stargazing_time)
 
     precip_prob = weather_data['precipProb']
     humidity = weather_data['humidity']
@@ -247,8 +246,8 @@ def get_stargaze_report(lat_org, lng_org, lat_selected, lng_selected, time=None)
     site_quality = calculate_rating(precip_prob, humidity, cloud_cover, light_pol)
     site_quality_discript = site_rating_desciption(site_quality)
 
-    # Only get CDS chart if time is within 24 hours
-    if time < curr_time + 86000:
+    # Only get CDS chart if requested time is within 24 hours
+    if stargazing_time < curr_time + 86000:
         cds_chart = apis.nearest_csc(float(lat_selected), float(lng_selected))
     else:
         cds_chart = None
