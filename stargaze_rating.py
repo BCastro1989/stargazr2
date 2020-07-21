@@ -122,25 +122,21 @@ def get_driving_distance(lat_origin, lng_origin, lat_selected, lng_selected):
     returns: dictionary with distance in time and space, in km and human readable
     """
 
+    if lat_origin is None:
+        return {"status": "Error: No start location specified"}
+
     dist_data = apis.gmaps_distance(lat_origin, lng_origin, lat_selected, lng_selected)
 
     if 'duration' in dist_data['rows'][0]['elements'][0]:
-        duration_text = dist_data['rows'][0]['elements'][0]['duration']['text']
-        duration_value = dist_data['rows'][0]['elements'][0]['duration']['value']
-        distance_text = dist_data['rows'][0]['elements'][0]['distance']['text']
-        distance_value = dist_data['rows'][0]['elements'][0]['distance']['value']
+        driving_distance = {
+            "status": "Sucess",
+            'duration_text': dist_data['rows'][0]['elements'][0]['duration']['text'],
+            'duration_value': dist_data['rows'][0]['elements'][0]['duration']['value'],
+            'distance_text': dist_data['rows'][0]['elements'][0]['distance']['text'],
+            'distance_value': dist_data['rows'][0]['elements'][0]['distance']['value'],
+        }
     else:
-        duration_text = 'N/A'
-        duration_value = 'N/A'
-        distance_text = 'N/A'
-        distance_value = 'N/A'
-
-    driving_distance = {
-        'duration_text': duration_text,
-        'duration_value': duration_value,
-        'distance_text': distance_text,
-        'distance_value': distance_value,
-    }
+        driving_distance = {"status": "Error: No route found to destination"}
 
     return driving_distance
 
@@ -206,7 +202,7 @@ def calculate_rating(precipProbability, humidity, cloudCover, lightPol):
 
 
 # TODO: CleanUp/Refactor
-def get_stargaze_report(lat_org, lng_org, lat_selected, lng_selected, stargazing_time=None):
+def get_stargaze_report(lat_selected, lng_selected, lat_org=None, lng_org=None, stargazing_time=None):
     """get stargazing report based on given coordinates.
 
     args:
@@ -246,10 +242,10 @@ def get_stargaze_report(lat_org, lng_org, lat_selected, lng_selected, stargazing
     lunar_phase = weather_data['moonPhase']
     elevation = get_site_elevation(lat_selected, lng_selected)
     light_pol = apis.light_pollution(float(lat_selected), float(lng_selected))
-    # TODO Allow users with no entered location to lookup stargazing reports(drop driving distance request)
-    driving_distance = get_driving_distance(lat_org, lng_org, lat_selected, lng_selected)
     site_quality = calculate_rating(precip_prob, humidity, cloud_cover, light_pol)
     site_quality_discript = site_rating_desciption(site_quality)
+
+    driving_distance = get_driving_distance(lat_org, lng_org, lat_selected, lng_selected)
 
     # Only get CDS chart if requested time is within 24 hours
     if stargazing_time < curr_time + SECONDS_IN_DAY:
@@ -267,35 +263,44 @@ def get_stargaze_report(lat_org, lng_org, lat_selected, lng_selected, stargazing
         'lightPol': light_pol,
         'elevation': elevation,
         'lunarphase': lunar_phase,
+        'drivingDistance': driving_distance,
         'CDSChart': cds_chart
     }
-    site_data.update(driving_distance)
-
     return json.dumps(site_data)
 
 
 def test():
     time = get_current_unix_time()
 
-    # Test stargazing using SaTODO Allow users with no entered location to lookup stargazing reports (drop driving distance request)n Francisco as user location, Pt Reyes at stargazing site, no time param
-    result = get_stargaze_report(37.7360512, -122.4997348, 38.116947, -122.925357)
-    print("********** SF-Pt. Reyes TEST w/o time **********")
+    # Test at Pt Reyes w/o specified user location or time
+    result = get_stargaze_report(38.116947, -122.925357)
+    print("********** Pt. Reyes TEST w/o time, w/o origin**********")
     print(result, "\n")
 
-    # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 12 hr
+    # Test at Pt Reyes w/o specified user location, for future time (No driving or CSC returned)
+    result = get_stargaze_report(38.116947, -122.925357, None, None, time + SECONDS_IN_DAY*2)
+    print("********** Pt. Reyes TEST w/o origin, in 2 days**********")
+    print(result, "\n")
+
+    # Test San Francisco as user location, Stony Gorge at stargazing site, no time specified (now)
+    result = get_stargaze_report(37.7360512, -122.4997348, 38.116947, -122.925357)
+    print("********** SF to Pt. Reyes TEST w/o time (now) **********")
+    print(result, "\n")
+
+    # Test San Francisco as user location, Stony Gorge at stargazing site, time is in 12 hr
     result = get_stargaze_report(37.7360512, -122.4997348, 39.580110, -122.524105, time + SECONDS_IN_DAY/2)
     print("********** SF-Stony Gorge w/ time **********")
     print(result, "\n")
 
-    # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, time is in 24 hr
-    result = get_stargaze_report(37.7360512, -122.4997348, 38.116947, -122.925357, time + SECONDS_IN_DAY)
-    print("********** SF-Pt. Reyes w/ time **********")
-    print(result, "\n")
+    # # Test San Francisco as user location, Pt Reyes at stargazing site, time is in 24 hr
+    # result = get_stargaze_report(37.7360512, -122.4997348, 38.116947, -122.925357, time + SECONDS_IN_DAY)
+    # print("********** SF-Pt. Reyes w/ time **********")
+    # print(result, "\n")
 
-    # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 36 hr
-    result = get_stargaze_report(37.7360512, -122.4997348, 39.580110, -122.524105, time + SECONDS_IN_DAY*1.5)
-    print("********** SF-Stony Gorge w/ time **********")
-    print(result, "\n")
+    # # Test San Francisco as user location, Stony Gorge at stargazing site, time is in 36 hr
+    # result = get_stargaze_report(37.7360512, -122.4997348, 39.580110, -122.524105, time + SECONDS_IN_DAY*1.5)
+    # print("********** SF-Stony Gorge w/ time **********")
+    # print(result, "\n")
 
 
 if __name__ == "__main__":
