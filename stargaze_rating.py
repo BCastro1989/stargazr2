@@ -122,25 +122,21 @@ def get_driving_distance(lat_origin, lng_origin, lat_selected, lng_selected):
     returns: dictionary with distance in time and space, in km and human readable
     """
 
+    if lat_origin is None:
+        return {"status": "Error: No start location specified"}
+
     dist_data = apis.gmaps_distance(lat_origin, lng_origin, lat_selected, lng_selected)
 
     if 'duration' in dist_data['rows'][0]['elements'][0]:
-        duration_text = dist_data['rows'][0]['elements'][0]['duration']['text']
-        duration_value = dist_data['rows'][0]['elements'][0]['duration']['value']
-        distance_text = dist_data['rows'][0]['elements'][0]['distance']['text']
-        distance_value = dist_data['rows'][0]['elements'][0]['distance']['value']
+        driving_distance = {
+            "status": "Sucess",
+            'duration_text': dist_data['rows'][0]['elements'][0]['duration']['text'],
+            'duration_value': dist_data['rows'][0]['elements'][0]['duration']['value'],
+            'distance_text': dist_data['rows'][0]['elements'][0]['distance']['text'],
+            'distance_value': dist_data['rows'][0]['elements'][0]['distance']['value'],
+        }
     else:
-        duration_text = 'N/A'
-        duration_value = 'N/A'
-        distance_text = 'N/A'
-        distance_value = 'N/A'
-
-    driving_distance = {
-        'duration_text': duration_text,
-        'duration_value': duration_value,
-        'distance_text': distance_text,
-        'distance_value': distance_value,
-    }
+        driving_distance = {"status": "Error: No route found to destination"}
 
     return driving_distance
 
@@ -249,11 +245,7 @@ def get_stargaze_report(lat_selected, lng_selected, lat_org=None, lng_org=None, 
     site_quality = calculate_rating(precip_prob, humidity, cloud_cover, light_pol)
     site_quality_discript = site_rating_desciption(site_quality)
 
-    # Drop driving distance request for users without entered origin/geolocated position
-    if lat_org != None and lng_org != None:
-        driving_distance = get_driving_distance(lat_org, lng_org, lat_selected, lng_selected)
-    else: 
-        driving_distance = {}
+    driving_distance = get_driving_distance(lat_org, lng_org, lat_selected, lng_selected)
 
     # Only get CDS chart if requested time is within 24 hours
     if stargazing_time < curr_time + SECONDS_IN_DAY:
@@ -271,10 +263,9 @@ def get_stargaze_report(lat_selected, lng_selected, lat_org=None, lng_org=None, 
         'lightPol': light_pol,
         'elevation': elevation,
         'lunarphase': lunar_phase,
+        'drivingDistance': driving_distance,
         'CDSChart': cds_chart
     }
-    site_data.update(driving_distance)
-
     return json.dumps(site_data)
 
 
