@@ -272,30 +272,35 @@ def get_stargaze_report(lat_selected, lng_selected, lat_org=None, lng_org=None, 
 def test():
     time = get_current_unix_time()
 
-    # Test stargazing using SaTODO Allow users with no entered location to lookup stargazing reports (drop driving distance request)n Francisco as user location, Pt Reyes at stargazing site, no time param
+    # Test at Pt Reyes w/o specified user location or time
     result = get_stargaze_report(38.116947, -122.925357)
-    print("********** Pt. Reyes TEST w/o time, origin**********")
+    print("********** Pt. Reyes TEST w/o time, w/o origin**********")
     print(result, "\n")
 
-    # Test stargazing using SaTODO Allow users with no entered location to lookup stargazing reports (drop driving distance request)n Francisco as user location, Pt Reyes at stargazing site, no time param
+    # Test at Pt Reyes w/o specified user location, for future time (No driving or CSC returned)
+    result = get_stargaze_report(38.116947, -122.925357, None, None, time + SECONDS_IN_DAY*2)
+    print("********** Pt. Reyes TEST w/o origin, in 2 days**********")
+    print(result, "\n")
+
+    # Test San Francisco as user location, Stony Gorge at stargazing site, no time specified (now)
     result = get_stargaze_report(37.7360512, -122.4997348, 38.116947, -122.925357)
-    print("********** SF-Pt. Reyes TEST w/o time **********")
+    print("********** SF to Pt. Reyes TEST w/o time (now) **********")
     print(result, "\n")
 
-    # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 12 hr
+    # Test San Francisco as user location, Stony Gorge at stargazing site, time is in 12 hr
     result = get_stargaze_report(37.7360512, -122.4997348, 39.580110, -122.524105, time + SECONDS_IN_DAY/2)
     print("********** SF-Stony Gorge w/ time **********")
     print(result, "\n")
 
-    # Test stargazing using San Francisco as user location, Pt Reyes at stargazing site, time is in 24 hr
-    result = get_stargaze_report(37.7360512, -122.4997348, 38.116947, -122.925357, time + SECONDS_IN_DAY)
-    print("********** SF-Pt. Reyes w/ time **********")
-    print(result, "\n")
+    # # Test San Francisco as user location, Pt Reyes at stargazing site, time is in 24 hr
+    # result = get_stargaze_report(37.7360512, -122.4997348, 38.116947, -122.925357, time + SECONDS_IN_DAY)
+    # print("********** SF-Pt. Reyes w/ time **********")
+    # print(result, "\n")
 
-    # Test stargazing using San Francisco as user location, Stony Gorge at stargazing site, time is in 36 hr
-    result = get_stargaze_report(37.7360512, -122.4997348, 39.580110, -122.524105, time + SECONDS_IN_DAY*1.5)
-    print("********** SF-Stony Gorge w/ time **********")
-    print(result, "\n")
+    # # Test San Francisco as user location, Stony Gorge at stargazing site, time is in 36 hr
+    # result = get_stargaze_report(37.7360512, -122.4997348, 39.580110, -122.524105, time + SECONDS_IN_DAY*1.5)
+    # print("********** SF-Stony Gorge w/ time **********")
+    # print(result, "\n")
 
 
 if __name__ == "__main__":
