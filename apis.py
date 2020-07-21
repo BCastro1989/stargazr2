@@ -2,7 +2,7 @@ import os
 import requests
 
 from helpers import (
-    convertUnixToYMDFormat
+    convert_unix_to_YMD,
 )
 
 
@@ -80,7 +80,7 @@ def sunrise_sunset_time(lat_selected, lon_selected, time):
         'lat': lat_selected,
         'lng': lon_selected,
         'formatted': 0,
-        'date': str(convertUnixToYMDFormat(time)) if time else "",
+        'date': str(convert_unix_to_YMD(time)) if time else "",
     }
 
     # TODO: Currently only returns darkness times for today, must work for next 48 hours

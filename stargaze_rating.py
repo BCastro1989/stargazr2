@@ -57,9 +57,6 @@ def get_darkness_times(lat_selected, lon_selected, time):
         'next_day_dusk': nxtday_stagazing_begin_unix
     }
 
-    # print('sg Start @:',morning_stagazing_ends_unix)
-    # print('sg end   @:',night_stagazing_begins_unix)
-
     return darkness_times
 
 
@@ -75,9 +72,6 @@ def set_time_to_dark(darkness_times, curr_time_unix):
     args: Unix times for current time, darkness start/end time
     returns: Boolean
     """
-    # pretty print(for debugging)
-    # debug.pp_when_in_day_night_cycle(darkness_times, curr_time_unix)
-
     # Must consider several cases because sunrise-sunset API assumes all times are UTC, such that
     # depending on the time zone of user, the darkness times may be given for the following day.
     # This might be fixed by using user time zone from location, or passing TZ from client
@@ -105,8 +99,6 @@ def get_weather_at_time(lat_selected, lon_selected, time=None):
     # a lot more params in url request used. Probably worth it in the long run
     weather_data = apis.dark_sky(lat_selected, lon_selected, time)
 
-    # debug.test_DS_api(weather_data)
-
     # NOTE Hourly forcast data is only availible for next 48 hours
     # If more than 48 hours ahead, only have daily weather, so just assume it applies at night
 
@@ -127,11 +119,11 @@ def get_weather_at_time(lat_selected, lon_selected, time=None):
     }
 
 
-def get_location_data(lat_origin, lon_origin, lat_selected, lon_selected):
-    """Gets the elevation and distance to the given coordinates.
+def get_driving_distance(lat_origin, lon_origin, lat_selected, lon_selected):
+    """Gets approx driving distance and trip time to the given coordinates.
 
     args: lat/lon for origin and stargazing site selcted
-    returns: dictionary with elevation, distance in time and space, simple units and human readable
+    returns: dictionary with distance in time and space, in km and human readable
     """
 
     dist_data = apis.gmaps_distance(lat_origin, lon_origin, lat_selected, lon_selected)
@@ -149,7 +141,6 @@ def get_location_data(lat_origin, lon_origin, lat_selected, lon_selected):
         distance_value = 'N/A'
 
     location_data = {
-        'elevation': elev_data['results'][0]['elevation'],
         'duration_text': duration_text,
         'duration_value': duration_value,
         'distance_text': distance_text,
@@ -157,6 +148,16 @@ def get_location_data(lat_origin, lon_origin, lat_selected, lon_selected):
     }
 
     return location_data
+
+
+def get_site_elevation(lat, lon):
+    """Gets the elevation at the given coordinates.
+
+    args: lat/lon for stargazing site selcted
+    returns: dictionary with elevation, distance in meters
+    """
+    elev_data = apis.gmaps_elevation(lat, lon)
+    return elev_data['results'][0]['elevation']
 
 
 def site_rating_desciption(site_quality):
@@ -241,7 +242,9 @@ def get_stargaze_report(lat_org, lon_org, lat_starsite, lon_starsite, time=None)
     humidity = weather_data['humidity']
     cloud_cover = weather_data['cloudCover']
     lunar_phase = weather_data['moonPhase']
+    elevation = get_site_elevation(lat_starsite, lon_starsite)
     light_pol = apis.light_pollution(float(lat_starsite), float(lon_starsite))
+    location_data = get_driving_distance(lat_org, lon_org, lat_starsite, lon_starsite)
     site_quality = calculate_rating(precip_prob, humidity, cloud_cover, light_pol)
     site_quality_discript = site_rating_desciption(site_quality)
 
@@ -259,11 +262,10 @@ def get_stargaze_report(lat_org, lon_org, lat_starsite, lon_starsite, time=None)
         'humidity': humidity,
         'cloudCover': cloud_cover,
         'lightPol': light_pol,
+        'elevation': elevation,
         'lunarphase': lunar_phase,
         'CDSChart': cds_chart
     }
-
-    location_data = get_location_data(lat_org, lon_org, lat_starsite, lon_starsite)
     site_data.update(location_data)
 
     return json.dumps(site_data)
