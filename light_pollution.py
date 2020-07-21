@@ -72,17 +72,17 @@ pixel_lightpoll_table = {
 }
 
 
-def get_light_pollution(lat, lon):
+def get_light_pollution(lat, lng):
     """Gets the Light Pollution level for the location chosen.
 
-    args: lat/lon for stargazing site
+    args: lat/lng for stargazing site
     returns: Double representation of light pollution levels
     """
     curr_dir_path = os.path.dirname(os.path.realpath(__file__))
     tiles_dir_path = os.path.join(curr_dir_path, 'lp_tiles')
 
     bin_lat = 0
-    bin_lon = 0
+    bin_lng = 0
     found = False
 
     # 1024 pixels* (47-11=34) images in lat, 140 deg of coverage
@@ -90,7 +90,7 @@ def get_light_pollution(lat, lon):
     lat_pixel_res = 140.0/(1024*34)
     long_pixel_res = 360.0/(1024*64)
 
-    i, j = get_lat_lng_tile(lat, lon, 6)
+    i, j = get_lat_lng_tile(lat, lng, 6)
     i_pixel_percent = i % 1
     j_pixel_percent = j % 1
     i = int(i)
